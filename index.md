@@ -13,11 +13,43 @@ Choose the binary for your operating system:
 
 <div class="download-grid">
 {% for download in site.downloads %}
-  <a href="{{ '/dist/' | append: download.file | relative_url }}" class="download-btn" download>
+  <a href="{{ site.baseurl }}/dist/{{ download.file }}" class="download-btn" download>
     <span class="download-icon">{{ download.icon }}</span>
     <span class="download-name">{{ download.name }}</span>
   </a>
 {% endfor %}
+</div>
+
+<!-- Debug: Show what downloads are available -->
+{% if site.downloads.size == 0 %}
+<p><strong>Debug:</strong> No downloads found in site.downloads</p>
+{% else %}
+<p><strong>Debug:</strong> Found {{ site.downloads.size }} downloads:</p>
+<ul>
+{% for download in site.downloads %}
+  <li>{{ download.name }}: {{ download.file }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<!-- Fallback static download links -->
+<div class="download-grid">
+  <a href="{{ site.baseurl }}/dist/auto-spotify-linux-amd64" class="download-btn" download>
+    <span class="download-icon">🐧</span>
+    <span class="download-name">Linux (AMD64)</span>
+  </a>
+  <a href="{{ site.baseurl }}/dist/auto-spotify-darwin-amd64" class="download-btn" download>
+    <span class="download-icon">🍎</span>
+    <span class="download-name">macOS (Intel)</span>
+  </a>
+  <a href="{{ site.baseurl }}/dist/auto-spotify-darwin-arm64" class="download-btn" download>
+    <span class="download-icon">🍎</span>
+    <span class="download-name">macOS (Apple Silicon)</span>
+  </a>
+  <a href="{{ site.baseurl }}/dist/auto-spotify-windows-amd64.exe" class="download-btn" download>
+    <span class="download-icon">🪟</span>
+    <span class="download-name">Windows (AMD64)</span>
+  </a>
 </div>
 
 <div class="install-instructions">
@@ -175,7 +207,7 @@ OPENAI_API_KEY=your_api_key_here
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md]({{ site.baseurl }}/CONTRIBUTING.html) for development setup, testing, and contribution guidelines.
+See [CONTRIBUTING.md]({{ site.baseurl }}/contributing/) for development setup, testing, and contribution guidelines.
 
 ---
 
