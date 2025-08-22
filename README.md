@@ -12,9 +12,19 @@ Create Spotify playlists automatically! Auto-Spotify can create playlists from y
    - **macOS (Intel)**: `dist/auto-spotify-darwin-amd64`
    - **macOS (Apple Silicon)**: `dist/auto-spotify-darwin-arm64`
    - **Windows (AMD64)**: `dist/auto-spotify-windows-amd64.exe`
-3. Make the file executable (macOS/Linux only):
+3. Rename and make executable:
+
+   **Linux/macOS:**
    ```bash
-   chmod +x auto-spotify-*
+   # Download and rename (example for macOS Apple Silicon)
+   mv auto-spotify-darwin-arm64 auto-spotify
+   chmod +x auto-spotify
+   ```
+   
+   **Windows:**
+   ```cmd
+   # Rename the downloaded file
+   ren auto-spotify-windows-amd64.exe auto-spotify.exe
    ```
 
 ### Option 2: Build from Source
