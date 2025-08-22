@@ -42,31 +42,31 @@ class JekyllGenerator
     
     # Create Jekyll front matter
     jekyll_content = <<~FRONTMATTER
-      ---
-      layout: default
-      title: Home
-      ---
+---
+layout: default
+title: Home
+---
 
-      # 🎵 Auto-Spotify
+# 🎵 Auto-Spotify
 
-      AI-powered Spotify playlist generator that creates playlists from text prompts or song files.
+AI-powered Spotify playlist generator that creates playlists from text prompts or song files.
 
-      ## 📦 Download Pre-built Binaries
+## 📦 Download Pre-built Binaries
 
-      Choose the binary for your operating system:
+Choose the binary for your operating system:
 
-      - **🐧 Linux (AMD64)**: [auto-spotify-linux-amd64]({{ site.baseurl }}/dist/auto-spotify-linux-amd64)
-      - **🍎 macOS (Intel)**: [auto-spotify-darwin-amd64]({{ site.baseurl }}/dist/auto-spotify-darwin-amd64)
-      - **🍎 macOS (Apple Silicon)**: [auto-spotify-darwin-arm64]({{ site.baseurl }}/dist/auto-spotify-darwin-arm64)
-      - **🪟 Windows (AMD64)**: [auto-spotify-windows-amd64.exe]({{ site.baseurl }}/dist/auto-spotify-windows-amd64.exe)
+- **🐧 Linux (AMD64)**: [auto-spotify-linux-amd64]({{ site.baseurl }}/dist/auto-spotify-linux-amd64)
+- **🍎 macOS (Intel)**: [auto-spotify-darwin-amd64]({{ site.baseurl }}/dist/auto-spotify-darwin-amd64)
+- **🍎 macOS (Apple Silicon)**: [auto-spotify-darwin-arm64]({{ site.baseurl }}/dist/auto-spotify-darwin-arm64)
+- **🪟 Windows (AMD64)**: [auto-spotify-windows-amd64.exe]({{ site.baseurl }}/dist/auto-spotify-windows-amd64.exe)
 
-      **After downloading:**
-      - **Linux/macOS:** `mv auto-spotify-* auto-spotify && chmod +x auto-spotify`
-      - **Windows:** `ren auto-spotify-*.exe auto-spotify.exe`
+**After downloading:**
+- **Linux/macOS:** `mv auto-spotify-* auto-spotify && chmod +x auto-spotify`
+- **Windows:** `ren auto-spotify-*.exe auto-spotify.exe`
 
-      ---
+---
 
-    FRONTMATTER
+FRONTMATTER
     
     # Process the content for Jekyll
     processed_content = process_content_for_jekyll(content)
@@ -94,15 +94,15 @@ class JekyllGenerator
     
     # Create Jekyll front matter
     jekyll_content = <<~FRONTMATTER
-      ---
-      layout: page
-      title: Contributing
-      permalink: /contributing/
-      ---
+---
+layout: page
+title: Contributing
+permalink: /contributing/
+---
 
-      # Contributing to Auto-Spotify
+# Contributing to Auto-Spotify
 
-    FRONTMATTER
+FRONTMATTER
     
     # Process the content for Jekyll
     processed_content = process_content_for_jekyll(content)

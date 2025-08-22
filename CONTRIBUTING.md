@@ -30,6 +30,14 @@ permalink: /contributing/
 
 # Contributing to Auto-Spotify
 
+---
+layout: page
+title: Contributing
+permalink: /contributing/
+---
+
+# Contributing to Auto-Spotify
+
 Thank you for your interest in contributing to Auto-Spotify! This document provides guidelines and instructions for contributing.
 
 ## Getting Started
