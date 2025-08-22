@@ -62,8 +62,8 @@ class JekyllGenerator
     content = content.gsub(/\[([^\]]*)\]\(README\.md\)/, '[\1]({{ site.baseurl }}/)')
     content = content.gsub(/\[([^\]]*)\]\(\.\/README\.md\)/, '[\1]({{ site.baseurl }}/)')
     
-    # Convert GitHub releases links to use Jekyll dist directory for binaries
-    content = content.gsub(/https:\/\/github\.com\/jmervine\/auto-spotify\/releases\/latest\/download\/(auto-spotify-[^)]+)/, '{{ site.baseurl }}/dist/\1')
+    # Keep GitHub releases links as-is (binaries are now served from GitHub Releases)
+    # No conversion needed - links should point directly to GitHub releases
     
     # Convert other .md files to Jekyll-style links (remove .md extension)
     content = content.gsub(/\[([^\]]*)\]\(([^)]*?)\.md\)/) do |match|

@@ -26,14 +26,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
-        
-    - name: Build Release Binaries
-      run: make release
-      
     - name: Setup Pages
       uses: actions/configure-pages@v4
       
@@ -56,19 +48,10 @@ jobs:
     - name: Install Jekyll dependencies
       run: bundle install
         
-    - name: Build Jekyll site (includes dist/ directory)
+    - name: Build Jekyll site
       run: bundle exec jekyll build
       env:
         JEKYLL_ENV: production
-        
-    - name: Verify binaries in Jekyll site
-      run: |
-        echo "Checking if binaries exist in source:"
-        ls -la dist/
-        echo "Checking if binaries were copied to Jekyll site:"
-        ls -la _site/dist/ || echo "No _site/dist directory found"
-        echo "Checking Jekyll site structure:"
-        find _site -name "*.exe" -o -name "auto-spotify-*" | head -10
         
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3

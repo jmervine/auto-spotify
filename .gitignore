@@ -43,6 +43,7 @@ Thumbs.db
 auto-spotify
 auto-spotify.exe
 build/
+dist/
 
 # Generated documentation
 docs-site/

@@ -8,9 +8,9 @@ markdown: kramdown
 highlighter: rouge
 theme: minima
 
-# Include static files
-include:
-  - dist
+# Static files (binaries now served from GitHub Releases)
+# include:
+#   - dist
 
 # Plugins
 plugins:

@@ -1,0 +1,112 @@
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        default: 'v0.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "VERSION=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+        else
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Build release binaries
+      run: |
+        VERSION="${{ steps.version.outputs.VERSION }}"
+        echo "Building version: $VERSION"
+        
+        # Build for all platforms
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=$VERSION" -o dist/auto-spotify-linux-amd64 .
+        GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w -X main.version=$VERSION" -o dist/auto-spotify-darwin-amd64 .
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=$VERSION" -o dist/auto-spotify-darwin-arm64 .
+        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -X main.version=$VERSION" -o dist/auto-spotify-windows-amd64.exe .
+        
+        # Make binaries executable
+        chmod +x dist/auto-spotify-*
+        
+        # Show what we built
+        ls -la dist/
+        
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        VERSION="${{ steps.version.outputs.VERSION }}"
+        cat > release_notes.md << 'EOF'
+        ## 🎵 Auto-Spotify $VERSION
+        
+        AI-powered Spotify playlist generator that creates playlists from text prompts or song files.
+        
+        ### 📦 Downloads
+        
+        Choose the binary for your operating system:
+        
+        - **🐧 Linux (AMD64)**: `auto-spotify-linux-amd64`
+        - **🍎 macOS (Intel)**: `auto-spotify-darwin-amd64`  
+        - **🍎 macOS (Apple Silicon)**: `auto-spotify-darwin-arm64`
+        - **🪟 Windows (AMD64)**: `auto-spotify-windows-amd64.exe`
+        
+        ### 🚀 Installation
+        
+        **Linux/macOS:**
+        ```bash
+        # Download and rename
+        mv auto-spotify-* auto-spotify
+        chmod +x auto-spotify
+        
+        # Optional: Move to PATH
+        sudo mv auto-spotify /usr/local/bin/
+        ```
+        
+        **Windows:**
+        ```cmd
+        ren auto-spotify-windows-amd64.exe auto-spotify.exe
+        ```
+        
+        ### 📋 What's New
+        
+        See the [README](https://github.com/jmervine/auto-spotify#readme) for full usage instructions.
+        EOF
+        
+        echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+        cat release_notes.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        name: Auto-Spotify ${{ steps.version.outputs.VERSION }}
+        body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
+        files: |
+          dist/auto-spotify-linux-amd64
+          dist/auto-spotify-darwin-amd64
+          dist/auto-spotify-darwin-arm64
+          dist/auto-spotify-windows-amd64.exe
+        draft: false
+        prerelease: false
