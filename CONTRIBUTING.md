@@ -101,18 +101,49 @@ Test with AI generation (requires OpenAI API key):
 ./auto-spotify --count 10 "chill indie rock"
 ```
 
-## Building Release Binaries
+## Creating Releases
 
-Build for all supported platforms:
+### GitHub Actions Release Process
+
+Auto-Spotify uses GitHub Actions to automatically build and release binaries. Here's how to create a new release:
+
+1. **Create a version tag:**
+   ```bash
+   git tag v1.0.1
+   git push --tags
+   ```
+
+2. **GitHub Actions automatically:**
+   - Builds cross-platform binaries (Linux, macOS Intel/ARM, Windows)
+   - Creates a GitHub Release with changelog
+   - Uploads binaries with proper naming
+   - Injects version info into binaries
+
+3. **Download links update automatically** - Jekyll site and README links point to latest release
+
+### Release Versioning
+
+Follow [semantic versioning](https://semver.org/):
+- **Major** (`v2.0.0`) - Breaking changes
+- **Minor** (`v1.1.0`) - New features, backwards compatible  
+- **Patch** (`v1.0.1`) - Bug fixes, backwards compatible
+
+### Manual Release Trigger
+
+You can also trigger releases manually from GitHub:
+1. Go to Actions → "Release Binaries" 
+2. Click "Run workflow"
+3. Enter the version tag (e.g., `v1.0.1`)
+
+### Local Development Builds
+
+For local testing only (not for releases):
 
 ```bash
 make release
 ```
 
-This creates binaries in the `dist/` directory for:
-- Linux (AMD64)
-- macOS (Intel & Apple Silicon)  
-- Windows (AMD64)
+This creates binaries in the `dist/` directory for local testing, but these are **not committed to git** and **not used for releases**.
 
 ## Makefile Usage
 
