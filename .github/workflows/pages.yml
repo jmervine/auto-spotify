@@ -55,11 +55,6 @@ jobs:
         
     - name: Install Jekyll dependencies
       run: bundle install
-      
-    - name: Copy binaries to Jekyll assets
-      run: |
-        mkdir -p dist
-        cp -r dist ./_site/ || mkdir -p _site/dist && cp -r dist/* _site/dist/
         
     - name: Build Jekyll site
       run: bundle exec jekyll build
