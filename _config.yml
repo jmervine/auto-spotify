@@ -1,0 +1,57 @@
+title: Auto-Spotify
+description: AI-Powered Spotify Playlist Generator
+url: "https://jmervine.github.io"
+baseurl: "/auto-spotify"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# Collections
+collections:
+  downloads:
+    output: false
+
+# Exclude files from processing
+exclude:
+  - .env
+  - .env.example
+  - go.mod
+  - go.sum
+  - "*.go"
+  - cmd/
+  - internal/
+  - scripts/
+  - templates/
+  - docs-site/
+  - Makefile
+  - CONTRIBUTING.md
+  - metal-songs.txt
+  - vendor/
+  - .gitignore
+  - README.md
+
+# GitHub Pages settings
+github_username: jmervine
+repository: auto-spotify
+
+# Custom variables
+downloads:
+  - name: "Linux (AMD64)"
+    file: "auto-spotify-linux-amd64"
+    icon: "🐧"
+  - name: "macOS (Intel)"
+    file: "auto-spotify-darwin-amd64"  
+    icon: "🍎"
+  - name: "macOS (Apple Silicon)"
+    file: "auto-spotify-darwin-arm64"
+    icon: "🍎"
+  - name: "Windows (AMD64)"
+    file: "auto-spotify-windows-amd64.exe"
+    icon: "🪟"

@@ -46,6 +46,10 @@ build/
 
 # Generated documentation
 docs-site/
+_site/
+.jekyll-cache/
+.jekyll-metadata
+Gemfile.lock
 
 # Logs
 *.log

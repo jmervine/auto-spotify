@@ -1,4 +1,4 @@
-name: Build and Deploy GitHub Pages
+name: Build and Deploy Jekyll GitHub Pages
 
 on:
   push:
@@ -37,65 +37,42 @@ jobs:
     - name: Setup Pages
       uses: actions/configure-pages@v4
       
-    - name: Create Pages Site
-      run: |
-        # Use the Python build script with templates
-        python3 scripts/build-pages.py
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.1'
+        bundler-cache: true
         
-        # Create a simple 404 page
-        cat > docs-site/404.html << 'EOF'
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Page Not Found - Auto-Spotify</title>
-            <style>
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    margin: 0;
-                    background: #f8f9fa;
-                }
-                .container {
-                    text-align: center;
-                    background: white;
-                    padding: 40px;
-                    border-radius: 10px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }
-                h1 { color: #1db954; }
-                a {
-                    color: #1db954;
-                    text-decoration: none;
-                    font-weight: 500;
-                }
-                a:hover { text-decoration: underline; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>🎵 Page Not Found</h1>
-                <p>The page you're looking for doesn't exist.</p>
-                <a href="/">← Back to Auto-Spotify</a>
-            </div>
-        </body>
-        </html>
+    - name: Create Gemfile
+      run: |
+        cat > Gemfile << 'EOF'
+        source "https://rubygems.org"
+        gem "jekyll", "~> 4.3.0"
+        gem "minima", "~> 2.5"
+        gem "jekyll-feed", "~> 0.12"
+        gem "jekyll-sitemap", "~> 1.4"
         EOF
         
-        # Create CNAME file if this is for a custom domain (optional)
-        # echo "auto-spotify.example.com" > docs-site/CNAME
+    - name: Install Jekyll dependencies
+      run: bundle install
+      
+    - name: Copy binaries to Jekyll assets
+      run: |
+        mkdir -p dist
+        cp -r dist ./_site/ || mkdir -p _site/dist && cp -r dist/* _site/dist/
         
-        echo "Generated GitHub Pages site in docs-site/"
-        ls -la docs-site/
+    - name: Build Jekyll site
+      run: bundle exec jekyll build
+      env:
+        JEKYLL_ENV: production
+        
+    - name: Copy binaries to built site
+      run: |
+        mkdir -p _site/dist
+        cp -r dist/* _site/dist/
         
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
-      with:
-        path: ./docs-site
 
   deploy:
     if: github.ref == 'refs/heads/master'

@@ -88,15 +88,31 @@ release: clean ## Build release binaries for multiple platforms
 	GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/auto-spotify-windows-amd64.exe .
 	@echo "Release binaries created in dist/"
 
-# Build GitHub Pages site locally
-pages: release ## Build GitHub Pages site locally for testing
-	@echo "Building GitHub Pages site..."
-	@python3 scripts/build-pages.py
+# Jekyll site commands
+jekyll-install: ## Install Jekyll dependencies
+	@echo "Installing Jekyll dependencies..."
+	@bundle install
 
-# Clean pages artifacts
-clean-pages: ## Remove generated pages site
-	@echo "Cleaning pages artifacts..."
-	@rm -rf docs-site
+jekyll-serve: release ## Serve Jekyll site locally for development
+	@echo "Starting Jekyll development server..."
+	@mkdir -p dist
+	@bundle exec jekyll serve --livereload
+
+jekyll-build: release ## Build Jekyll site locally
+	@echo "Building Jekyll site..."
+	@mkdir -p dist
+	@bundle exec jekyll build
+	@mkdir -p _site/dist
+	@cp -r dist/* _site/dist/
+	@echo "✅ Jekyll site built in _site/"
+
+# Legacy pages command (now uses Jekyll)
+pages: jekyll-build ## Build GitHub Pages site locally for testing
+
+# Clean Jekyll artifacts
+clean-pages: ## Remove generated Jekyll site
+	@echo "Cleaning Jekyll artifacts..."
+	@rm -rf _site .jekyll-cache docs-site
 
 # Help target
 help: ## Show this help message
