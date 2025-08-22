@@ -3,9 +3,10 @@ layout: default
 title: Home
 ---
 
-# 🎵 Auto-Spotify
+# Auto-Spotify 🎵
 
-AI-powered Spotify playlist generator that creates playlists from text prompts or song files.
+Create Spotify playlists automatically! Auto-Spotify can create playlists from your own song lists or use AI to generate new playlists based on your music preferences.
+
 
 ## 📦 Download Pre-built Binaries
 
@@ -15,24 +16,6 @@ Choose the binary for your operating system:
 - **🍎 macOS (Intel)**: [auto-spotify-darwin-amd64]({{ site.baseurl }}/dist/auto-spotify-darwin-amd64)
 - **🍎 macOS (Apple Silicon)**: [auto-spotify-darwin-arm64]({{ site.baseurl }}/dist/auto-spotify-darwin-arm64)
 - **🪟 Windows (AMD64)**: [auto-spotify-windows-amd64.exe]({{ site.baseurl }}/dist/auto-spotify-windows-amd64.exe)
-
-**After downloading:**
-- **Linux/macOS:** `mv auto-spotify-* auto-spotify && chmod +x auto-spotify`
-- **Windows:** `ren auto-spotify-*.exe auto-spotify.exe`
-
----
-
-Create Spotify playlists automatically! Auto-Spotify can create playlists from your own song lists or use AI to generate new playlists based on your music preferences.
-
-
-## 📦 Download Pre-built Binaries
-
-Choose the binary for your operating system:
-
-- **🐧 Linux (AMD64)**: [auto-spotify-linux-amd64](https://github.com/jmervine/auto-spotify/releases/latest/download/auto-spotify-linux-amd64)
-- **🍎 macOS (Intel)**: [auto-spotify-darwin-amd64](https://github.com/jmervine/auto-spotify/releases/latest/download/auto-spotify-darwin-amd64)
-- **🍎 macOS (Apple Silicon)**: [auto-spotify-darwin-arm64](https://github.com/jmervine/auto-spotify/releases/latest/download/auto-spotify-darwin-arm64)
-- **🪟 Windows (AMD64)**: [auto-spotify-windows-amd64.exe](https://github.com/jmervine/auto-spotify/releases/latest/download/auto-spotify-windows-amd64.exe)
 
 **After downloading:**
 - **Linux/macOS:** `mv auto-spotify-* auto-spotify && chmod +x auto-spotify`
@@ -256,7 +239,7 @@ Just Song Title
 
 ## 📝 Contributing
 
-See [CONTRIBUTING.md]({{ site.baseurl }}/contributing/) for development setup, testing, and contribution guidelines.
+See [CONTRIBUTING.md](https://github.com/jmervine/auto-spotify/blob/master/CONTRIBUTING.md) for development setup, testing, and contribution guidelines.
 
 ## 📄 License
 

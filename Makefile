@@ -79,9 +79,9 @@ setup: ## Set up development environment
 	fi
 	$(MAKE) install
 
-# Generate Jekyll files from README and CONTRIBUTING
-generate-jekyll: ## Generate Jekyll files from primary documentation
-	@echo "Generating Jekyll files from README and CONTRIBUTING..."
+# Generate Jekyll site from README
+generate-jekyll: ## Generate Jekyll site from README.md
+	@echo "Generating Jekyll site from README..."
 	@ruby scripts/generate-jekyll.rb
 
 # Release build (cross-platform)
