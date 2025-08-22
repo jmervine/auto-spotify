@@ -28,6 +28,10 @@ func main() {
 	// Setup root command
 	rootCmd := cmd.NewRootCmd(openaiService, spotifyService)
 
+	// Add export subcommand
+	exportCmd := cmd.NewExportCmd(spotifyService)
+	rootCmd.AddCommand(exportCmd)
+
 	// Execute
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

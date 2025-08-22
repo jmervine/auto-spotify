@@ -23,15 +23,18 @@ func NewRootCmd(openaiService *openai.Service, spotifyService *spotify.Service) 
 
 	rootCmd := &cobra.Command{
 		Use:   "auto-spotify",
-		Short: "Generate Spotify playlists using AI or from text files",
+		Short: "Generate Spotify playlists using AI or from text files, and export existing playlists",
 		Long: `Auto-Spotify uses OpenAI's ChatGPT to generate song recommendations based on your prompts,
 or loads songs from a text file, then creates a Spotify playlist with those songs.
+You can also export your existing Spotify playlists to text files for backup or sharing.
 
 Examples:
   auto-spotify "songs for a road trip"
   auto-spotify "chill indie rock for studying" --songs 15
   auto-spotify "upbeat workout music" "electronic dance" --songs 25
-  auto-spotify --file metal-songs.txt --name "My Metal Playlist"`,
+  auto-spotify --file metal-songs.txt --name "My Metal Playlist"
+  auto-spotify export --dir ./backups                    # Export all playlists
+  auto-spotify export --dir ./backups --playlist "My Mix" # Export specific playlist`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if inputFile == "" && len(args) == 0 && len(prompts) == 0 {
 				return fmt.Errorf("provide either prompts or use --file to load from a text file")

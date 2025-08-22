@@ -32,6 +32,25 @@ type SearchResult struct {
 	Reason string
 }
 
+// PlaylistInfo represents basic playlist information
+type PlaylistInfo struct {
+	ID          string
+	Name        string
+	Description string
+	TrackCount  int
+	Owner       string
+	Public      bool
+}
+
+// TrackInfo represents basic track information
+type TrackInfo struct {
+	ID     string
+	Title  string
+	Artist string
+	Album  string
+	Year   int
+}
+
 // NewService creates a new Spotify service
 func NewService(clientID, clientSecret, redirectURL string) *Service {
 	auth := spotifyauth.New(
@@ -403,4 +422,125 @@ func (s *Service) clearPlaylist(ctx context.Context, playlistID spotify.ID) erro
 	}
 
 	return nil
+}
+
+// GetUserPlaylists retrieves all playlists for the current user
+func (s *Service) GetUserPlaylists(ctx context.Context) ([]PlaylistInfo, error) {
+	if s.client == nil {
+		return nil, fmt.Errorf("not authenticated with Spotify")
+	}
+
+	var allPlaylists []PlaylistInfo
+	limit := 50
+	offset := 0
+	maxPlaylists := 1000 // Safety limit
+
+	for {
+		playlists, err := s.client.CurrentUsersPlaylists(ctx, spotify.Limit(limit), spotify.Offset(offset))
+		if err != nil {
+			return nil, fmt.Errorf("failed to get playlists: %w", err)
+		}
+
+		for _, playlist := range playlists.Playlists {
+			playlistInfo := PlaylistInfo{
+				ID:          string(playlist.ID),
+				Name:        playlist.Name,
+				Description: playlist.Description,
+				TrackCount:  int(playlist.Tracks.Total),
+				Owner:       playlist.Owner.ID,
+				Public:      playlist.IsPublic,
+			}
+			allPlaylists = append(allPlaylists, playlistInfo)
+
+			// Safety check
+			if len(allPlaylists) >= maxPlaylists {
+				break
+			}
+		}
+
+		// Check if we've seen all playlists
+		if len(playlists.Playlists) < limit || len(allPlaylists) >= maxPlaylists {
+			break
+		}
+		offset += limit
+	}
+
+	return allPlaylists, nil
+}
+
+// GetPlaylistTracks retrieves all tracks from a playlist
+func (s *Service) GetPlaylistTracks(ctx context.Context, playlistID string) ([]TrackInfo, error) {
+	if s.client == nil {
+		return nil, fmt.Errorf("not authenticated with Spotify")
+	}
+
+	var allTracks []TrackInfo
+	limit := 100
+	offset := 0
+	maxTracks := 10000 // Safety limit
+
+	spotifyID := spotify.ID(playlistID)
+
+	for {
+		tracks, err := s.client.GetPlaylistTracks(ctx, spotifyID,
+			spotify.Limit(limit),
+			spotify.Offset(offset),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get playlist tracks: %w", err)
+		}
+
+		for _, item := range tracks.Tracks {
+			if item.Track.ID == "" {
+				continue // Skip empty tracks
+			}
+
+			track := item.Track
+
+			// Get primary artist
+			var artist string
+			if len(track.Artists) > 0 {
+				artist = track.Artists[0].Name
+			}
+
+			// Get album name
+			var album string
+			if track.Album.Name != "" {
+				album = track.Album.Name
+			}
+
+			// Get release year
+			var year int
+			if track.Album.ReleaseDate != "" {
+				// Parse year from release date (format: "YYYY-MM-DD" or "YYYY")
+				if len(track.Album.ReleaseDate) >= 4 {
+					if y, err := time.Parse("2006", track.Album.ReleaseDate[:4]); err == nil {
+						year = y.Year()
+					}
+				}
+			}
+
+			trackInfo := TrackInfo{
+				ID:     string(track.ID),
+				Title:  track.Name,
+				Artist: artist,
+				Album:  album,
+				Year:   year,
+			}
+			allTracks = append(allTracks, trackInfo)
+
+			// Safety check
+			if len(allTracks) >= maxTracks {
+				break
+			}
+		}
+
+		// Check if we've seen all tracks
+		if len(tracks.Tracks) < limit || len(allTracks) >= maxTracks {
+			break
+		}
+		offset += limit
+	}
+
+	return allTracks, nil
 }
