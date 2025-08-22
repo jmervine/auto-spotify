@@ -30,17 +30,7 @@ go mod tidy
 go build -o auto-spotify
 ```
 
-### 2. Generate SSL Certificates
-
-For HTTPS support with Spotify OAuth, generate SSL certificates:
-
-```bash
-./generate-certs.sh
-```
-
-This creates certificates in the `certs/` directory that work with `https://127.0.0.1:8080/callback`.
-
-### 3. Configure API Keys
+### 2. Configure API Keys
 
 Copy the example environment file and fill in your API credentials:
 
@@ -60,24 +50,12 @@ SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
 SPOTIFY_REDIRECT_URL=http://127.0.0.1:8080/callback
 ```
 
-### 4. Spotify App Configuration
+### 3. Spotify App Configuration
 
 In your Spotify app settings, add the redirect URI:
 - **Redirect URI**: `http://127.0.0.1:8080/callback`
 
-**Important**: Use `127.0.0.1` instead of `localhost` to avoid redirect URI issues. HTTP works fine for local development with Spotify OAuth.
-
-#### Redirect URI Configuration
-
-**Local Development (Recommended):**
-- Use HTTP with IP address for simplicity
-- Set `SPOTIFY_REDIRECT_URL=http://127.0.0.1:8080/callback`
-- Add `http://127.0.0.1:8080/callback` to your Spotify app settings
-
-**Production Deployment:**
-- Use HTTPS with your actual domain
-- Set `SPOTIFY_REDIRECT_URL=https://your-domain.com/callback`
-- The app automatically detects HTTP vs HTTPS from the URL
+**Important**: Use `127.0.0.1` instead of `localhost` to avoid redirect URI issues. The application uses HTTP for the OAuth callback.
 
 ## Usage
 

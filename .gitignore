@@ -47,8 +47,4 @@ build/
 # Logs
 *.log
 
-# SSL Certificates
-certs/
-*.crt
-*.key
-*.pem
+

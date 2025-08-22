@@ -2,19 +2,10 @@ package spotify
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/tls"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
 	"fmt"
 	"log"
-	"math/big"
-	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -62,50 +53,9 @@ func NewService(clientID, clientSecret, redirectURL string) *Service {
 	}
 }
 
-// generateSelfSignedCert generates a self-signed certificate for localhost
-func generateSelfSignedCert() (tls.Certificate, error) {
-	// Generate private key
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-
-	// Create certificate template
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			Organization:  []string{"Auto-Spotify"},
-			Country:       []string{"US"},
-			Province:      []string{""},
-			Locality:      []string{""},
-			StreetAddress: []string{""},
-			PostalCode:    []string{""},
-		},
-		NotBefore:   time.Now(),
-		NotAfter:    time.Now().Add(365 * 24 * time.Hour), // Valid for 1 year
-		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
-		DNSNames:    []string{"localhost", "127.0.0.1"},
-	}
-
-	// Create certificate
-	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-
-	// Encode certificate and key
-	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-
-	// Create TLS certificate
-	return tls.X509KeyPair(certPEM, keyPEM)
-}
-
 // Authenticate handles the OAuth flow for Spotify
 func (s *Service) Authenticate(ctx context.Context) error {
-	// Parse redirect URL to determine if we need HTTPS
+	// Parse redirect URL to get the port
 	redirectURL, err := url.Parse(s.redirectURL)
 	if err != nil {
 		return fmt.Errorf("invalid redirect URL: %w", err)
@@ -151,46 +101,11 @@ func (s *Service) Authenticate(ctx context.Context) error {
 		Handler: mux,
 	}
 
-	// Start server based on URL scheme
+	// Start HTTP server
 	go func() {
-		if redirectURL.Scheme == "https" {
-			log.Printf("Starting HTTPS server on %s for Spotify OAuth callback...", server.Addr)
-
-			// Try to use pre-generated certificates first
-			certFile := "certs/server.crt"
-			keyFile := "certs/server.key"
-
-			if _, err := os.Stat(certFile); err == nil {
-				if _, err := os.Stat(keyFile); err == nil {
-					// Use pre-generated certificates
-					log.Printf("Using pre-generated certificates from certs/ directory")
-					if err := server.ListenAndServeTLS(certFile, keyFile); err != nil && err != http.ErrServerClosed {
-						errCh <- fmt.Errorf("HTTPS server error with pre-generated certs: %w", err)
-					}
-					return
-				}
-			}
-
-			// Fallback to generating certificate on-the-fly
-			log.Printf("Pre-generated certificates not found, generating temporary certificate...")
-			cert, err := generateSelfSignedCert()
-			if err != nil {
-				errCh <- fmt.Errorf("failed to generate certificate: %w", err)
-				return
-			}
-
-			server.TLSConfig = &tls.Config{
-				Certificates: []tls.Certificate{cert},
-			}
-
-			if err := server.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
-				errCh <- fmt.Errorf("HTTPS server error: %w", err)
-			}
-		} else {
-			log.Printf("Starting HTTP server on %s for Spotify OAuth callback...", server.Addr)
-			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				errCh <- fmt.Errorf("HTTP server error: %w", err)
-			}
+		log.Printf("Starting HTTP server on %s for Spotify OAuth callback...", server.Addr)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errCh <- fmt.Errorf("HTTP server error: %w", err)
 		}
 	}()
 
