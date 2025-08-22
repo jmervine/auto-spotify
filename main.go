@@ -19,7 +19,10 @@ func main() {
 	}
 
 	// Initialize services
-	openaiService := openai.NewService(cfg.OpenAI.APIKey)
+	var openaiService *openai.Service
+	if cfg.OpenAI.APIKey != "" {
+		openaiService = openai.NewService(cfg.OpenAI.APIKey)
+	}
 	spotifyService := spotify.NewService(cfg.Spotify.ClientID, cfg.Spotify.ClientSecret, cfg.Spotify.RedirectURL)
 
 	// Setup root command

@@ -42,9 +42,7 @@ func Load() (*Config, error) {
 	}
 
 	// Validate required configuration
-	if cfg.OpenAI.APIKey == "" {
-		return nil, fmt.Errorf("OPENAI_API_KEY is required")
-	}
+	// Note: OPENAI_API_KEY is optional for file-based playlists
 	if cfg.Spotify.ClientID == "" {
 		return nil, fmt.Errorf("SPOTIFY_CLIENT_ID is required")
 	}

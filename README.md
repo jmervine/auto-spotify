@@ -1,27 +1,12 @@
 # Auto-Spotify 🎵
 
-Generate Spotify playlists using AI! Auto-Spotify uses OpenAI's ChatGPT to create personalized song recommendations based on your prompts, then automatically creates a Spotify playlist with those songs.
+Create Spotify playlists automatically! Auto-Spotify can create playlists from your own song lists or use AI to generate new playlists based on your music preferences.
 
-## Features
+## 📦 Installation
 
-- 🤖 **AI-Powered**: Uses OpenAI's ChatGPT to generate intelligent song recommendations
-- 🎧 **Spotify Integration**: Automatically creates playlists in your Spotify account
-- 🎯 **Flexible Prompts**: Support for single or multiple prompts to create diverse playlists
-- 🔍 **Smart Search**: Intelligent song matching to find tracks on Spotify
-- 📊 **Detailed Reporting**: Shows which songs were found and added to your playlist
-- ⚡ **Fast & Easy**: Simple command-line interface
+### Install from Source
 
-## Prerequisites
-
-Before you begin, you'll need:
-
-1. **OpenAI API Key**: Get one from [OpenAI's website](https://platform.openai.com/api-keys)
-2. **Spotify Developer Account**: Create an app at [Spotify for Developers](https://developer.spotify.com/dashboard)
-3. **Go 1.21+**: Download from [golang.org](https://golang.org/dl/)
-
-## Setup
-
-### 1. Clone and Build
+**Requirements**: Go 1.21 or later
 
 ```bash
 git clone https://github.com/jmervine/auto-spotify.git
@@ -30,214 +15,193 @@ go mod tidy
 go build -o auto-spotify
 ```
 
-### 2. Configure API Keys
+## 🎵 Method 1: Using ChatGPT (Free - No OpenAI Account Required)
 
-Copy the example environment file and fill in your API credentials:
+**Best for**: People who don't want to pay for OpenAI API access but want AI-generated playlists.
 
-```bash
-cp env.example .env
+### Step 1: Get Song Recommendations from ChatGPT
+
+Go to [ChatGPT](https://chat.openai.com) and use this detailed prompt:
+
+```
+I want to create a Spotify playlist. Please generate a list of 25 songs in the exact format I specify below. Each line should contain only the artist name, a dash, and the song title. Do not include any other text, explanations, or formatting.
+
+Theme: [DESCRIBE YOUR DESIRED PLAYLIST HERE - e.g., "upbeat workout music with electronic and rock elements"]
+
+Please format each song exactly like this:
+Artist Name - Song Title
+
+For example:
+The Weeknd - Blinding Lights
+Dua Lipa - Physical
+Imagine Dragons - Believer
+
+Now generate 25 songs for my theme:
 ```
 
-Edit `.env` with your credentials:
+**Example for a workout playlist:**
+
+```
+I want to create a Spotify playlist. Please generate a list of 25 songs in the exact format I specify below. Each line should contain only the artist name, a dash, and the song title. Do not include any other text, explanations, or formatting.
+
+Theme: High-energy workout music with a mix of electronic, rock, and pop songs that are perfect for running and strength training. Focus on songs with strong beats and motivational lyrics.
+
+Please format each song exactly like this:
+Artist Name - Song Title
+
+For example:
+The Weeknd - Blinding Lights
+Dua Lipa - Physical
+Imagine Dragons - Believer
+
+Now generate 25 songs for my theme:
+```
+
+### Step 2: Save the Song List
+
+1. Copy ChatGPT's response (just the song list)
+2. Paste it into a text file (e.g., `workout-playlist.txt`)
+3. Save the file
+
+### Step 3: Set Up Spotify App
+
+1. Go to [Spotify for Developers](https://developer.spotify.com/dashboard)
+2. Log in with your Spotify account
+3. Click "Create App"
+4. Fill in:
+   - **App name**: `Auto-Spotify` (or any name)
+   - **App description**: `Personal playlist generator`
+   - **Redirect URI**: `http://127.0.0.1:8080/callback`
+5. Save your **Client ID** and **Client Secret**
+
+### Step 4: Configure Auto-Spotify
+
+Create a `.env` file in the same folder as the auto-spotify executable:
 
 ```env
-# OpenAI API Configuration
-OPENAI_API_KEY=your_openai_api_key_here
+# You can leave this blank for file-based playlists
+OPENAI_API_KEY=
 
-# Spotify API Configuration
+# Your Spotify app credentials
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
 SPOTIFY_REDIRECT_URL=http://127.0.0.1:8080/callback
 ```
 
-### 3. Spotify App Configuration
+### Step 5: Create Your Playlist
 
-In your Spotify app settings, add the redirect URI:
-- **Redirect URI**: `http://127.0.0.1:8080/callback`
-
-**Important**: Use `127.0.0.1` instead of `localhost` to avoid redirect URI issues. The application uses HTTP for the OAuth callback.
-
-## Usage
-
-### Basic Usage
-
-**Generate playlist with AI prompts:**
 ```bash
-./auto-spotify "chill indie rock for studying"
+./auto-spotify --file workout-playlist.txt --name "My Workout Playlist"
 ```
 
-**Load playlist from text file:**
-```bash
-./auto-spotify --file my-songs.txt --name "My Custom Playlist"
+The app will:
+1. Read your song list
+2. Ask you to log in to Spotify (one-time setup)
+3. Search for each song on Spotify
+4. Create the playlist in your account
+5. Show you which songs were found/not found
+
+## 🤖 Method 2: Using OpenAI API (Paid - Experimental)
+
+**Best for**: People with OpenAI API access who want fully automated AI playlist generation.
+
+⚠️ **Note**: This feature is experimental and may not work perfectly. OpenAI API usage will cost money based on your usage.
+
+### Step 1: Get OpenAI API Key
+
+1. Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
+2. Create a new API key
+3. Make sure you have credits in your OpenAI account
+
+### Step 2: Set Up Spotify App
+
+Follow the same Spotify setup steps from Method 1.
+
+### Step 3: Configure Auto-Spotify
+
+Create a `.env` file:
+
+```env
+# Your OpenAI API key
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Your Spotify app credentials  
+SPOTIFY_CLIENT_ID=your_spotify_client_id_here
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
+SPOTIFY_REDIRECT_URL=http://127.0.0.1:8080/callback
 ```
 
-### Advanced Usage
+### Step 4: Generate Playlists with AI
 
-**Specify number of songs (AI mode only):**
+**Single prompt:**
 ```bash
-./auto-spotify "upbeat workout music" --songs 30
+./auto-spotify "upbeat workout music with electronic beats"
 ```
 
 **Multiple prompts:**
 ```bash
-./auto-spotify "90s hip hop" "modern R&B" --songs 25
+./auto-spotify "90s hip hop" "modern R&B" --songs 30
 ```
 
-**Using prompt flags:**
+**Specify number of songs:**
 ```bash
-./auto-spotify --prompt "jazz for a rainy day" --prompt "acoustic covers" --songs 15
+./auto-spotify "chill indie rock for studying" --songs 25
 ```
 
-### File Input Format
-
-Create a text file with your songs in any of these formats:
-
-```text
-# Comments start with # or //
-# Format options:
-
-Artist - Song Title
-Artist: Song Title  
-Song Title by Artist
-Just Song Title (artist will be "Unknown")
-
-# Example file (metal-songs.txt):
-Metallica - Master of Puppets
-Iron Maiden: Run to the Hills
-Enter Sandman by Metallica
-Paranoid
-```
-
-**Supported file extensions:** `.txt`, `.list`, or any text file
+## 🎛️ Advanced Options
 
 ### Command Options
 
-- `--songs, -s`: Number of songs to include (default: 20, ignored when using --file)
-- `--prompt, -p`: Additional prompts (can be used multiple times)
 - `--file, -f`: Load songs from a text file instead of using AI
 - `--name, -n`: Custom playlist name (when using --file)
+- `--songs, -s`: Number of songs to include (default: 20, ignored when using --file)
 - `--create, -c`: Force create new playlist instead of updating existing one
 - `--help, -h`: Show help information
 
+### File Format Support
+
+Your text files can use any of these formats:
+
+```text
+# Comments start with # or //
+Artist - Song Title
+Artist: Song Title  
+Song Title by Artist
+Just Song Title
+```
+
 ### Playlist Update Behavior
 
-**Default (Update Mode):**
-- If a playlist with the same name exists, it will be updated with new songs
-- Existing tracks are cleared and replaced with the new list
-- This prevents duplicate playlists with the same name
+- **Default**: If a playlist with the same name exists, it will be updated
+- **Force Create**: Use `--create` flag to always create a new playlist
 
-**Force Create Mode (`--create` flag):**
-- Always creates a new playlist, even if one with the same name exists
-- Useful when you want multiple versions of the same playlist
-
-## How It Works
-
-### AI Mode (Default)
-1. **Prompt Processing**: Your prompts are sent to OpenAI's ChatGPT
-2. **Song Generation**: ChatGPT generates a list of songs with artists, titles, and reasons
-3. **Spotify Authentication**: You'll be prompted to log in to Spotify (one-time setup)
-4. **Song Search**: Each recommended song is searched on Spotify
-5. **Playlist Creation**: A new playlist is created in your Spotify account
-6. **Results**: You'll see a summary of found/not found songs
-
-### File Mode (--file flag)
-1. **File Parsing**: Songs are loaded from your text file
-2. **Format Detection**: Multiple song formats are automatically detected
-3. **Spotify Authentication**: You'll be prompted to log in to Spotify (one-time setup)
-4. **Song Search**: Each song from the file is searched on Spotify
-5. **Playlist Creation**: A new playlist is created in your Spotify account
-6. **Results**: You'll see a summary of found/not found songs
-
-## Example Output
-
-```
-🎵 Generating playlist for prompts:
-  1. chill indie rock for studying
-
-🤖 Asking ChatGPT for song recommendations...
-✅ Generated playlist: "Indie Study Vibes"
-📝 Description: Perfect indie rock tracks for focused studying sessions
-
-🎼 Recommended songs (20):
-  1. Vampire Weekend - Oxford Comma (from Vampire Weekend) [2008]
-     💭 Upbeat yet mellow indie rock perfect for concentration
-  2. The Strokes - Someday (from Room on Fire) [2003]
-     💭 Classic indie rock with a steady rhythm for studying
-  ...
-
-🎧 Connecting to Spotify...
-Please log in to Spotify by visiting the following page in your browser:
-https://accounts.spotify.com/authorize?...
-
-📝 Creating Spotify playlist...
-Searching for 20 songs...
-  [1/20] Searching for: Vampire Weekend - Oxford Comma
-    ✓ Found: Vampire Weekend - Oxford Comma
-  ...
-
-🎉 Playlist created successfully!
-📋 Playlist: Indie Study Vibes
-🔗 URL: https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQV
-
-📊 Search Results Summary:
-  ✅ Found: 18 songs
-  ❌ Not found: 2 songs
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**"OPENAI_API_KEY is required"**
-- Make sure your `.env` file exists and contains your OpenAI API key
-- Verify the API key is valid and has credits available
+## 🔧 Troubleshooting
 
 **"SPOTIFY_CLIENT_ID is required"**
-- Ensure your Spotify app credentials are correctly set in `.env`
-- Verify the redirect URI is configured in your Spotify app
+- Make sure your `.env` file exists and contains your Spotify app credentials
+- Verify the redirect URI is configured in your Spotify app: `http://127.0.0.1:8080/callback`
 
 **"Failed to authenticate with Spotify"**
 - Check that your Spotify app's redirect URI matches exactly: `http://127.0.0.1:8080/callback`
-- Ensure port 8080 is not in use by another application
-- Try refreshing your browser if the authentication page doesn't load
-- If you see "INVALID_CLIENT: Invalid redirect URI", make sure you're using `127.0.0.1` instead of `localhost`
+- Make sure port 8080 isn't being used by another application
+- Use `127.0.0.1` instead of `localhost`
 
 **Songs not found on Spotify**
-- This is normal - not all AI-generated songs exist on Spotify
+- This is normal - not all songs exist on Spotify
 - The app will create a playlist with the songs it can find
-- Consider more specific or popular music prompts for better match rates
+- Try more specific artist/song names for better results
 
-### Debug Mode
+**OpenAI API errors**
+- Verify your API key is valid and has credits available
+- Check your OpenAI account billing status
 
-Set environment variable for more detailed logging:
-```bash
-export LOG_LEVEL=debug
-./auto-spotify "your prompt"
-```
+## 📝 Contributing
 
-## API Limits
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and contribution guidelines.
 
-- **OpenAI**: Usage depends on your API plan and token limits
-- **Spotify**: Rate limited to ~100 requests per minute per user
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [OpenAI](https://openai.com/) for the ChatGPT API
-- [Spotify](https://developer.spotify.com/) for the Web API
-- [zmb3/spotify](https://github.com/zmb3/spotify) for the excellent Go Spotify client
-- [sashabaranov/go-openai](https://github.com/sashabaranov/go-openai) for the OpenAI Go client
 
 ---
 

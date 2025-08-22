@@ -17,24 +17,61 @@ Thank you for your interest in contributing to Auto-Spotify! This document provi
 
 ## Development Setup
 
-1. **Install Go 1.21+** from [golang.org](https://golang.org/dl/)
+### Prerequisites
 
-2. **Install dependencies:**
+Before you begin, you'll need:
+
+1. **Go 1.21+**: Download from [golang.org](https://golang.org/dl/)
+2. **OpenAI API Key**: Get one from [OpenAI's website](https://platform.openai.com/api-keys) (for testing AI features)
+3. **Spotify Developer Account**: Create an app at [Spotify for Developers](https://developer.spotify.com/dashboard)
+
+### Quick Setup
+
+1. **Clone and build:**
    ```bash
+   git clone https://github.com/jmervine/auto-spotify.git
+   cd auto-spotify
    go mod tidy
+   go build -o auto-spotify
    ```
 
-3. **Set up environment variables:**
+2. **Configure API keys:**
    ```bash
    cp env.example .env
-   # Edit .env with your API keys
    ```
 
-4. **Build and test:**
+   Edit `.env` with your credentials:
+   ```env
+   # OpenAI API Configuration
+   OPENAI_API_KEY=your_openai_api_key_here
+
+   # Spotify API Configuration
+   SPOTIFY_CLIENT_ID=your_spotify_client_id_here
+   SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
+   SPOTIFY_REDIRECT_URL=http://127.0.0.1:8080/callback
+   ```
+
+3. **Configure Spotify App:**
+   In your Spotify app settings, add the redirect URI:
+   - **Redirect URI**: `http://127.0.0.1:8080/callback`
+
+4. **Test the build:**
    ```bash
-   go build -o auto-spotify
    ./auto-spotify "test prompt"
    ```
+
+### Using the Makefile
+
+The project includes a Makefile for common development tasks:
+
+```bash
+make setup      # Set up development environment
+make build      # Build the application
+make test       # Run all tests and checks
+make run        # Build and run with test prompt
+make clean      # Clean build artifacts
+make help       # Show all available commands
+```
 
 ## Making Changes
 
@@ -109,12 +146,92 @@ auto-spotify/
 
 ## Testing
 
-While we don't have automated tests yet, please:
+### Automated Tests
 
-1. Test your changes manually with various prompts
+The project includes comprehensive unit tests:
+
+```bash
+# Run all tests
+make test
+
+# Run only unit tests
+make unit-test
+
+# Run tests with coverage
+make test-coverage
+
+# Run benchmark tests
+make benchmark
+```
+
+### Test Coverage
+
+Current test coverage:
+- **Config Package**: 100% coverage
+- **OpenAI Package**: 79.4% coverage  
+- **CMD Package**: 19.6% coverage
+- **Spotify Package**: Limited (due to external API dependencies)
+
+### Manual Testing
+
+Please also test your changes manually:
+
+1. Test with various prompts and song counts
 2. Verify error handling works correctly
-3. Test with different song counts and multiple prompts
+3. Test file input functionality with different formats
 4. Ensure the Spotify authentication flow works
+5. Test playlist update vs. create behavior
+
+### Example Test Commands
+
+```bash
+# Test AI generation (requires OpenAI API key)
+./auto-spotify "chill indie rock for studying" --songs 15
+
+# Test file input
+echo "Queen - Bohemian Rhapsody\nThe Beatles - Hey Jude" > test-songs.txt
+./auto-spotify --file test-songs.txt --name "Test Playlist"
+
+# Test multiple prompts
+./auto-spotify "80s rock" "90s grunge" --songs 20
+
+# Test playlist update behavior
+./auto-spotify --file test-songs.txt --name "Existing Playlist"  # Updates existing
+./auto-spotify --file test-songs.txt --name "Existing Playlist" --create  # Forces new
+```
+
+
+
+## Technical Architecture
+
+### How It Works
+
+#### AI Mode (OpenAI Integration)
+1. **Prompt Processing**: User prompts are sent to OpenAI's ChatGPT
+2. **Song Generation**: ChatGPT generates a structured JSON response with songs
+3. **Spotify Authentication**: OAuth 2.0 flow with local HTTP server
+4. **Song Search**: Each recommended song is searched on Spotify using multiple query strategies
+5. **Playlist Creation**: Songs are added to a new or existing Spotify playlist
+6. **Results**: Detailed reporting of found/not found songs
+
+#### File Mode (Text File Input)
+1. **File Parsing**: Songs are loaded and parsed from text files with flexible format detection
+2. **Format Detection**: Supports "Artist - Song", "Artist: Song", "Song by Artist", and plain titles
+3. **Spotify Integration**: Same authentication and search process as AI mode
+4. **Playlist Management**: Supports both creating new playlists and updating existing ones
+
+### API Rate Limits
+
+- **OpenAI**: Usage depends on your API plan and token limits
+- **Spotify**: Rate limited to ~100 requests per minute per user
+- **Local Development**: Use file mode to avoid OpenAI costs during development
+
+### Performance Considerations
+
+- **File parsing**: ~498µs for 1000 songs (benchmarked)
+- **Service creation**: ~90ns per instance
+- **Memory usage**: Minimal for typical playlist sizes
+- **Concurrent requests**: Spotify searches are done sequentially to respect rate limits
 
 ## Submitting Changes
 
@@ -154,18 +271,17 @@ While we don't have automated tests yet, please:
 We welcome contributions in these areas:
 
 ### Features
-- **Interactive mode** for entering multiple prompts
+- **Interactive mode** for entering multiple prompts (partially implemented)
 - **Playlist templates** (workout, study, party, etc.)
 - **Music service integrations** (Apple Music, YouTube Music)
 - **Advanced search options** (year range, genre filters)
-- **Playlist management** (update existing playlists)
 
 ### Improvements
 - **Better song matching** algorithms
 - **Retry logic** for failed API calls
 - **Progress indicators** for long operations
 - **Configuration file** support
-- **Logging improvements**
+- **Debug logging** implementation
 
 ### Documentation
 - **API documentation**
@@ -174,9 +290,10 @@ We welcome contributions in these areas:
 - **Troubleshooting guides**
 
 ### Testing
-- **Unit tests** for core functionality
+- **Unit tests** for core functionality ✅ (Implemented)
 - **Integration tests** with mock APIs
 - **End-to-end testing** framework
+- **Performance benchmarks** ✅ (Implemented)
 
 ## Getting Help
 

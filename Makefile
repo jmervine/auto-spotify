@@ -33,11 +33,26 @@ vet: ## Run go vet
 	go vet ./...
 
 # Run a quick test build
-test: fmt vet ## Run formatting, vetting, and test build
+test: fmt vet unit-test ## Run formatting, vetting, unit tests, and test build
 	@echo "Running test build..."
 	go build -o /tmp/auto-spotify-test .
 	rm -f /tmp/auto-spotify-test
 	@echo "All checks passed!"
+
+# Run unit tests
+unit-test: ## Run unit tests
+	@echo "Running unit tests..."
+	go test ./... -v
+
+# Run unit tests with coverage
+test-coverage: ## Run unit tests with coverage report
+	@echo "Running tests with coverage..."
+	go test ./... -cover
+
+# Run benchmark tests
+benchmark: ## Run benchmark tests
+	@echo "Running benchmark tests..."
+	go test ./... -bench=. -benchmem
 
 # Run the application with a test prompt
 run: build ## Build and run with a test prompt

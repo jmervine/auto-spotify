@@ -51,6 +51,11 @@ Examples:
 					return fmt.Errorf("failed to load playlist from file: %w", err)
 				}
 			} else {
+				// Check if OpenAI API key is available for AI mode
+				if openaiService == nil {
+					return fmt.Errorf("OpenAI API key is required for AI playlist generation. Use --file flag to load from a text file instead")
+				}
+
 				// Use args as prompts if no --prompt flags were provided
 				if len(prompts) == 0 {
 					prompts = args
