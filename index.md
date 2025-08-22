@@ -40,6 +40,8 @@ Choose the binary for your operating system:
   </a>
 </div>
 
+---
+
 <div class="install-instructions">
 <p><strong>After downloading:</strong></p>
 <ul>
