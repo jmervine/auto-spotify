@@ -55,34 +55,14 @@ class JekyllGenerator
 
       Choose the binary for your operating system:
 
-      <div class="download-grid">
-      {% for download in site.downloads %}
-        <a href="{{ site.baseurl }}/dist/{{ download.file }}" class="download-btn" download>
-          <span class="download-icon">{{ download.icon }}</span>
-          <span class="download-name">{{ download.name }}</span>
-        </a>
-      {% endfor %}
-      </div>
+      - **🐧 Linux (AMD64)**: [auto-spotify-linux-amd64]({{ site.baseurl }}/dist/auto-spotify-linux-amd64)
+      - **🍎 macOS (Intel)**: [auto-spotify-darwin-amd64]({{ site.baseurl }}/dist/auto-spotify-darwin-amd64)
+      - **🍎 macOS (Apple Silicon)**: [auto-spotify-darwin-arm64]({{ site.baseurl }}/dist/auto-spotify-darwin-arm64)
+      - **🪟 Windows (AMD64)**: [auto-spotify-windows-amd64.exe]({{ site.baseurl }}/dist/auto-spotify-windows-amd64.exe)
 
-      <!-- Static download links -->
-      <div class="download-grid">
-        <a href="{{ site.baseurl }}/dist/auto-spotify-linux-amd64" class="download-btn" download>
-          <span class="download-icon">🐧</span>
-          <span class="download-name">Linux (AMD64)</span>
-        </a>
-        <a href="{{ site.baseurl }}/dist/auto-spotify-darwin-amd64" class="download-btn" download>
-          <span class="download-icon">🍎</span>
-          <span class="download-name">macOS (Intel)</span>
-        </a>
-        <a href="{{ site.baseurl }}/dist/auto-spotify-darwin-arm64" class="download-btn" download>
-          <span class="download-icon">🍎</span>
-          <span class="download-name">macOS (Apple Silicon)</span>
-        </a>
-        <a href="{{ site.baseurl }}/dist/auto-spotify-windows-amd64.exe" class="download-btn" download>
-          <span class="download-icon">🪟</span>
-          <span class="download-name">Windows (AMD64)</span>
-        </a>
-      </div>
+      **After downloading:**
+      - **Linux/macOS:** `mv auto-spotify-* auto-spotify && chmod +x auto-spotify`
+      - **Windows:** `ren auto-spotify-*.exe auto-spotify.exe`
 
       ---
 
