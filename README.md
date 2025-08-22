@@ -30,7 +30,17 @@ go mod tidy
 go build -o auto-spotify
 ```
 
-### 2. Configure API Keys
+### 2. Generate SSL Certificates
+
+For HTTPS support with Spotify OAuth, generate SSL certificates:
+
+```bash
+./generate-certs.sh
+```
+
+This creates certificates in the `certs/` directory that work with `https://127.0.0.1:8080/callback`.
+
+### 3. Configure API Keys
 
 Copy the example environment file and fill in your API credentials:
 
@@ -47,41 +57,45 @@ OPENAI_API_KEY=your_openai_api_key_here
 # Spotify API Configuration
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
-SPOTIFY_REDIRECT_URL=https://localhost:8080/callback
+SPOTIFY_REDIRECT_URL=http://127.0.0.1:8080/callback
 ```
 
-### 3. Spotify App Configuration
+### 4. Spotify App Configuration
 
 In your Spotify app settings, add the redirect URI:
-- **Redirect URI**: `https://localhost:8080/callback`
+- **Redirect URI**: `http://127.0.0.1:8080/callback`
 
-**Note**: The application supports both HTTP and HTTPS for the redirect URL. HTTPS is recommended and is the default. The application will automatically generate a self-signed certificate for localhost when using HTTPS.
+**Important**: Use `127.0.0.1` instead of `localhost` to avoid redirect URI issues. HTTP works fine for local development with Spotify OAuth.
 
-#### HTTPS vs HTTP Configuration
+#### Redirect URI Configuration
 
-**HTTPS (Recommended - Default):**
-- More secure OAuth flow
-- Required for some production deployments  
-- Uses self-signed certificate for localhost
-- Set `SPOTIFY_REDIRECT_URL=https://localhost:8080/callback`
+**Local Development (Recommended):**
+- Use HTTP with IP address for simplicity
+- Set `SPOTIFY_REDIRECT_URL=http://127.0.0.1:8080/callback`
+- Add `http://127.0.0.1:8080/callback` to your Spotify app settings
 
-**HTTP (Alternative):**
-- Simpler setup, no certificate warnings
-- Set `SPOTIFY_REDIRECT_URL=http://localhost:8080/callback`
+**Production Deployment:**
+- Use HTTPS with your actual domain
+- Set `SPOTIFY_REDIRECT_URL=https://your-domain.com/callback`
+- The app automatically detects HTTP vs HTTPS from the URL
 
 ## Usage
 
 ### Basic Usage
 
-Generate a playlist with a single prompt:
-
+**Generate playlist with AI prompts:**
 ```bash
 ./auto-spotify "chill indie rock for studying"
 ```
 
+**Load playlist from text file:**
+```bash
+./auto-spotify --file my-songs.txt --name "My Custom Playlist"
+```
+
 ### Advanced Usage
 
-**Specify number of songs:**
+**Specify number of songs (AI mode only):**
 ```bash
 ./auto-spotify "upbeat workout music" --songs 30
 ```
@@ -96,18 +110,63 @@ Generate a playlist with a single prompt:
 ./auto-spotify --prompt "jazz for a rainy day" --prompt "acoustic covers" --songs 15
 ```
 
+### File Input Format
+
+Create a text file with your songs in any of these formats:
+
+```text
+# Comments start with # or //
+# Format options:
+
+Artist - Song Title
+Artist: Song Title  
+Song Title by Artist
+Just Song Title (artist will be "Unknown")
+
+# Example file (metal-songs.txt):
+Metallica - Master of Puppets
+Iron Maiden: Run to the Hills
+Enter Sandman by Metallica
+Paranoid
+```
+
+**Supported file extensions:** `.txt`, `.list`, or any text file
+
 ### Command Options
 
-- `--songs, -s`: Number of songs to include (default: 20)
+- `--songs, -s`: Number of songs to include (default: 20, ignored when using --file)
 - `--prompt, -p`: Additional prompts (can be used multiple times)
+- `--file, -f`: Load songs from a text file instead of using AI
+- `--name, -n`: Custom playlist name (when using --file)
+- `--create, -c`: Force create new playlist instead of updating existing one
 - `--help, -h`: Show help information
+
+### Playlist Update Behavior
+
+**Default (Update Mode):**
+- If a playlist with the same name exists, it will be updated with new songs
+- Existing tracks are cleared and replaced with the new list
+- This prevents duplicate playlists with the same name
+
+**Force Create Mode (`--create` flag):**
+- Always creates a new playlist, even if one with the same name exists
+- Useful when you want multiple versions of the same playlist
 
 ## How It Works
 
+### AI Mode (Default)
 1. **Prompt Processing**: Your prompts are sent to OpenAI's ChatGPT
 2. **Song Generation**: ChatGPT generates a list of songs with artists, titles, and reasons
 3. **Spotify Authentication**: You'll be prompted to log in to Spotify (one-time setup)
 4. **Song Search**: Each recommended song is searched on Spotify
+5. **Playlist Creation**: A new playlist is created in your Spotify account
+6. **Results**: You'll see a summary of found/not found songs
+
+### File Mode (--file flag)
+1. **File Parsing**: Songs are loaded from your text file
+2. **Format Detection**: Multiple song formats are automatically detected
+3. **Spotify Authentication**: You'll be prompted to log in to Spotify (one-time setup)
+4. **Song Search**: Each song from the file is searched on Spotify
 5. **Playlist Creation**: A new playlist is created in your Spotify account
 6. **Results**: You'll see a summary of found/not found songs
 
@@ -160,10 +219,10 @@ Searching for 20 songs...
 - Verify the redirect URI is configured in your Spotify app
 
 **"Failed to authenticate with Spotify"**
-- Check that your Spotify app's redirect URI matches exactly: `https://localhost:8080/callback`
+- Check that your Spotify app's redirect URI matches exactly: `http://127.0.0.1:8080/callback`
 - Ensure port 8080 is not in use by another application
 - Try refreshing your browser if the authentication page doesn't load
-- If using HTTPS, your browser may show a security warning for the self-signed certificate - this is normal for localhost development, click "Advanced" and "Proceed to localhost"
+- If you see "INVALID_CLIENT: Invalid redirect URI", make sure you're using `127.0.0.1` instead of `localhost`
 
 **Songs not found on Spotify**
 - This is normal - not all AI-generated songs exist on Spotify

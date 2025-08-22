@@ -14,48 +14,66 @@ import (
 // NewRootCmd creates the root command
 func NewRootCmd(openaiService *openai.Service, spotifyService *spotify.Service) *cobra.Command {
 	var (
-		songCount int
-		prompts   []string
+		songCount    int
+		prompts      []string
+		inputFile    string
+		playlistName string
+		forceCreate  bool
 	)
 
 	rootCmd := &cobra.Command{
 		Use:   "auto-spotify",
-		Short: "Generate Spotify playlists using AI",
+		Short: "Generate Spotify playlists using AI or from text files",
 		Long: `Auto-Spotify uses OpenAI's ChatGPT to generate song recommendations based on your prompts,
-then creates a Spotify playlist with those songs.
+or loads songs from a text file, then creates a Spotify playlist with those songs.
 
 Examples:
   auto-spotify "songs for a road trip"
   auto-spotify "chill indie rock for studying" --songs 15
-  auto-spotify "upbeat workout music" "electronic dance" --songs 25`,
-		Args: cobra.MinimumNArgs(1),
+  auto-spotify "upbeat workout music" "electronic dance" --songs 25
+  auto-spotify --file metal-songs.txt --name "My Metal Playlist"`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if inputFile == "" && len(args) == 0 && len(prompts) == 0 {
+				return fmt.Errorf("provide either prompts or use --file to load from a text file")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-
-			// Use args as prompts if no --prompt flags were provided
-			if len(prompts) == 0 {
-				prompts = args
-			}
-
-			fmt.Printf("🎵 Generating playlist for prompts:\n")
-			for i, prompt := range prompts {
-				fmt.Printf("  %d. %s\n", i+1, prompt)
-			}
-			fmt.Printf("\n")
-
-			// Generate playlist using OpenAI
-			fmt.Println("🤖 Asking ChatGPT for song recommendations...")
 			var playlistResp *openai.PlaylistResponse
 			var err error
 
-			if len(prompts) == 1 {
-				playlistResp, err = openaiService.GeneratePlaylist(ctx, prompts[0], songCount)
+			if inputFile != "" {
+				// Load playlist from file
+				fmt.Printf("📁 Loading playlist from file: %s\n\n", inputFile)
+				playlistResp, err = openaiService.LoadPlaylistFromFile(inputFile, playlistName)
+				if err != nil {
+					return fmt.Errorf("failed to load playlist from file: %w", err)
+				}
 			} else {
-				playlistResp, err = openaiService.GeneratePlaylistFromMultiplePrompts(ctx, prompts, songCount)
-			}
+				// Use args as prompts if no --prompt flags were provided
+				if len(prompts) == 0 {
+					prompts = args
+				}
 
-			if err != nil {
-				return fmt.Errorf("failed to generate playlist: %w", err)
+				fmt.Printf("🎵 Generating playlist for prompts:\n")
+				for i, prompt := range prompts {
+					fmt.Printf("  %d. %s\n", i+1, prompt)
+				}
+				fmt.Printf("\n")
+
+				// Generate playlist using OpenAI
+				fmt.Println("🤖 Asking ChatGPT for song recommendations...")
+
+				if len(prompts) == 1 {
+					playlistResp, err = openaiService.GeneratePlaylist(ctx, prompts[0], songCount)
+				} else {
+					playlistResp, err = openaiService.GeneratePlaylistFromMultiplePrompts(ctx, prompts, songCount)
+				}
+
+				if err != nil {
+					return fmt.Errorf("failed to generate playlist: %w", err)
+				}
 			}
 
 			fmt.Printf("✅ Generated playlist: \"%s\"\n", playlistResp.PlaylistName)
@@ -84,11 +102,15 @@ Examples:
 				return fmt.Errorf("failed to authenticate with Spotify: %w", err)
 			}
 
-			// Create playlist on Spotify
-			fmt.Println("📝 Creating Spotify playlist...")
-			playlist, searchResults, err := spotifyService.CreatePlaylist(ctx, playlistResp)
+			// Create or update playlist on Spotify
+			if forceCreate {
+				fmt.Println("📝 Creating new Spotify playlist...")
+			} else {
+				fmt.Println("📝 Creating/updating Spotify playlist...")
+			}
+			playlist, searchResults, err := spotifyService.CreateOrUpdatePlaylist(ctx, playlistResp, forceCreate)
 			if err != nil {
-				return fmt.Errorf("failed to create Spotify playlist: %w", err)
+				return fmt.Errorf("failed to create/update Spotify playlist: %w", err)
 			}
 
 			// Report results
@@ -123,8 +145,11 @@ Examples:
 		},
 	}
 
-	rootCmd.Flags().IntVarP(&songCount, "songs", "s", 20, "Number of songs to include in the playlist")
+	rootCmd.Flags().IntVarP(&songCount, "songs", "s", 20, "Number of songs to include in the playlist (ignored when using --file)")
 	rootCmd.Flags().StringArrayVarP(&prompts, "prompt", "p", []string{}, "Additional prompts (can be used multiple times)")
+	rootCmd.Flags().StringVarP(&inputFile, "file", "f", "", "Load songs from a text file instead of using AI")
+	rootCmd.Flags().StringVarP(&playlistName, "name", "n", "", "Custom playlist name (when using --file)")
+	rootCmd.Flags().BoolVarP(&forceCreate, "create", "c", false, "Force create new playlist instead of updating existing one")
 
 	return rootCmd
 }

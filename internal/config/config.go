@@ -37,7 +37,7 @@ func Load() (*Config, error) {
 		Spotify: SpotifyConfig{
 			ClientID:     os.Getenv("SPOTIFY_CLIENT_ID"),
 			ClientSecret: os.Getenv("SPOTIFY_CLIENT_SECRET"),
-			RedirectURL:  getEnvOrDefault("SPOTIFY_REDIRECT_URL", "https://localhost:8080/callback"),
+			RedirectURL:  getEnvOrDefault("SPOTIFY_REDIRECT_URL", "http://127.0.0.1:8080/callback"),
 		},
 	}
 

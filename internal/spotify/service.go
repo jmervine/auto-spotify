@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -48,6 +49,7 @@ func NewService(clientID, clientSecret, redirectURL string) *Service {
 		spotifyauth.WithRedirectURL(redirectURL),
 		spotifyauth.WithScopes(
 			spotifyauth.ScopeUserReadPrivate,
+			spotifyauth.ScopePlaylistReadPrivate,
 			spotifyauth.ScopePlaylistModifyPublic,
 			spotifyauth.ScopePlaylistModifyPrivate,
 		),
@@ -84,7 +86,7 @@ func generateSelfSignedCert() (tls.Certificate, error) {
 		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
-		DNSNames:    []string{"localhost"},
+		DNSNames:    []string{"localhost", "127.0.0.1"},
 	}
 
 	// Create certificate
@@ -112,7 +114,7 @@ func (s *Service) Authenticate(ctx context.Context) error {
 	// Start a local server to handle the callback
 	ch := make(chan *oauth2.Token)
 	errCh := make(chan error)
-	state := "spotify-playlist-generator"
+	state := fmt.Sprintf("spotify-playlist-generator-%d", time.Now().UnixNano())
 
 	// Create a new ServeMux for this authentication session
 	mux := http.NewServeMux()
@@ -154,7 +156,23 @@ func (s *Service) Authenticate(ctx context.Context) error {
 		if redirectURL.Scheme == "https" {
 			log.Printf("Starting HTTPS server on %s for Spotify OAuth callback...", server.Addr)
 
-			// Generate self-signed certificate for localhost
+			// Try to use pre-generated certificates first
+			certFile := "certs/server.crt"
+			keyFile := "certs/server.key"
+
+			if _, err := os.Stat(certFile); err == nil {
+				if _, err := os.Stat(keyFile); err == nil {
+					// Use pre-generated certificates
+					log.Printf("Using pre-generated certificates from certs/ directory")
+					if err := server.ListenAndServeTLS(certFile, keyFile); err != nil && err != http.ErrServerClosed {
+						errCh <- fmt.Errorf("HTTPS server error with pre-generated certs: %w", err)
+					}
+					return
+				}
+			}
+
+			// Fallback to generating certificate on-the-fly
+			log.Printf("Pre-generated certificates not found, generating temporary certificate...")
 			cert, err := generateSelfSignedCert()
 			if err != nil {
 				errCh <- fmt.Errorf("failed to generate certificate: %w", err)
@@ -287,8 +305,8 @@ func (s *Service) isGoodMatch(requested openai.Song, track *spotify.FullTrack) b
 	return artistMatch && titleMatch
 }
 
-// CreatePlaylist creates a playlist on Spotify and adds the found tracks
-func (s *Service) CreatePlaylist(ctx context.Context, playlistResp *openai.PlaylistResponse) (*spotify.FullPlaylist, []SearchResult, error) {
+// CreateOrUpdatePlaylist creates a new playlist or updates an existing one with the same name
+func (s *Service) CreateOrUpdatePlaylist(ctx context.Context, playlistResp *openai.PlaylistResponse, forceCreate bool) (*spotify.FullPlaylist, []SearchResult, error) {
 	if s.client == nil {
 		return nil, nil, fmt.Errorf("not authenticated with Spotify")
 	}
@@ -299,24 +317,53 @@ func (s *Service) CreatePlaylist(ctx context.Context, playlistResp *openai.Playl
 		return nil, nil, fmt.Errorf("failed to get current user: %w", err)
 	}
 
-	// Create playlist
-	playlist, err := s.client.CreatePlaylistForUser(
-		ctx,
-		user.ID,
-		playlistResp.PlaylistName,
-		playlistResp.Description,
-		false, // public
-		false, // collaborative
-	)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create playlist: %w", err)
+	var playlist *spotify.FullPlaylist
+
+	// Try to find existing playlist with the same name (unless forcing create)
+	if !forceCreate {
+		fmt.Printf("🔍 Searching for existing playlist '%s'...\n", playlistResp.PlaylistName)
+		existingPlaylist, err := s.findPlaylistByName(ctx, user.ID, playlistResp.PlaylistName)
+		if err != nil {
+			fmt.Printf("⚠️  Warning: Failed to search for existing playlists: %v\n", err)
+		} else if existingPlaylist != nil {
+			fmt.Printf("🔄 Found existing playlist '%s', updating...\n", playlistResp.PlaylistName)
+			playlist = existingPlaylist
+
+			// Clear existing tracks
+			fmt.Printf("   🧹 Clearing existing tracks...\n")
+			if err := s.clearPlaylist(ctx, playlist.ID); err != nil {
+				fmt.Printf("⚠️  Warning: Failed to clear existing playlist: %v\n", err)
+				// Continue anyway, we'll just add to the existing tracks
+			} else {
+				fmt.Printf("   ✅ Cleared existing tracks\n")
+			}
+		} else {
+			fmt.Printf("❌ No existing playlist found with name '%s'\n", playlistResp.PlaylistName)
+		}
+	}
+
+	// Create new playlist if we don't have one
+	if playlist == nil {
+		fmt.Printf("📝 Creating new playlist '%s'...\n", playlistResp.PlaylistName)
+		newPlaylist, err := s.client.CreatePlaylistForUser(
+			ctx,
+			user.ID,
+			playlistResp.PlaylistName,
+			playlistResp.Description,
+			false, // public
+			false, // collaborative
+		)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to create playlist: %w", err)
+		}
+		playlist = newPlaylist
 	}
 
 	// Search for songs and collect track IDs
 	var trackIDs []spotify.ID
 	var searchResults []SearchResult
 
-	fmt.Printf("Searching for %d songs...\n", len(playlistResp.Songs))
+	fmt.Printf("🔍 Searching for %d songs...\n", len(playlistResp.Songs))
 
 	for i, song := range playlistResp.Songs {
 		fmt.Printf("  [%d/%d] Searching for: %s - %s\n", i+1, len(playlistResp.Songs), song.Artist, song.Title)
@@ -350,4 +397,95 @@ func (s *Service) CreatePlaylist(ctx context.Context, playlistResp *openai.Playl
 	}
 
 	return playlist, searchResults, nil
+}
+
+// CreatePlaylist creates a playlist on Spotify and adds the found tracks (legacy method)
+func (s *Service) CreatePlaylist(ctx context.Context, playlistResp *openai.PlaylistResponse) (*spotify.FullPlaylist, []SearchResult, error) {
+	return s.CreateOrUpdatePlaylist(ctx, playlistResp, true) // Force create new
+}
+
+// findPlaylistByName searches for a playlist by name in the user's playlists
+func (s *Service) findPlaylistByName(ctx context.Context, userID string, playlistName string) (*spotify.FullPlaylist, error) {
+	limit := 50
+	offset := 0
+	maxPlaylists := 200 // Safety limit to avoid infinite loops
+	totalChecked := 0
+
+	fmt.Printf("   🔍 Searching playlists for user %s...\n", userID)
+
+	for {
+		playlists, err := s.client.CurrentUsersPlaylists(ctx, spotify.Limit(limit), spotify.Offset(offset))
+		if err != nil {
+			return nil, fmt.Errorf("failed to get playlists: %w", err)
+		}
+
+		fmt.Printf("   📄 Checking %d playlists (offset %d)...\n", len(playlists.Playlists), offset)
+
+		for _, playlist := range playlists.Playlists {
+			totalChecked++
+			fmt.Printf("   📋 Playlist %d: '%s' (owner: %s)\n", totalChecked, playlist.Name, playlist.Owner.ID)
+
+			// Match by name (playlist is in user's library, so ownership is less strict)
+			if playlist.Name == playlistName {
+				fmt.Printf("   ✅ Found matching playlist!\n")
+				// Get full playlist details
+				fullPlaylist, err := s.client.GetPlaylist(ctx, playlist.ID)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get full playlist details: %w", err)
+				}
+				return fullPlaylist, nil
+			}
+		}
+
+		// Check if we've seen all playlists or hit our safety limit
+		if len(playlists.Playlists) < limit || totalChecked >= maxPlaylists {
+			fmt.Printf("   📊 Finished searching. Checked %d total playlists.\n", totalChecked)
+			break
+		}
+		offset += limit
+	}
+
+	return nil, nil // Not found
+}
+
+// clearPlaylist removes all tracks from a playlist
+func (s *Service) clearPlaylist(ctx context.Context, playlistID spotify.ID) error {
+	// Get current tracks
+	tracks, err := s.client.GetPlaylistTracks(ctx, playlistID)
+	if err != nil {
+		return err
+	}
+
+	if len(tracks.Tracks) == 0 {
+		return nil // Already empty
+	}
+
+	// Build list of track IDs to remove
+	var trackIDs []spotify.ID
+	for _, track := range tracks.Tracks {
+		if track.Track.ID != "" {
+			trackIDs = append(trackIDs, track.Track.ID)
+		}
+	}
+
+	if len(trackIDs) == 0 {
+		return nil
+	}
+
+	// Remove tracks in batches (Spotify API limit)
+	const batchSize = 100
+	for i := 0; i < len(trackIDs); i += batchSize {
+		end := i + batchSize
+		if end > len(trackIDs) {
+			end = len(trackIDs)
+		}
+
+		batch := trackIDs[i:end]
+		_, err := s.client.RemoveTracksFromPlaylist(ctx, playlistID, batch...)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
