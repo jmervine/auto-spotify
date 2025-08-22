@@ -47,13 +47,27 @@ OPENAI_API_KEY=your_openai_api_key_here
 # Spotify API Configuration
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
-SPOTIFY_REDIRECT_URL=http://localhost:8080/callback
+SPOTIFY_REDIRECT_URL=https://localhost:8080/callback
 ```
 
 ### 3. Spotify App Configuration
 
 In your Spotify app settings, add the redirect URI:
-- **Redirect URI**: `http://localhost:8080/callback`
+- **Redirect URI**: `https://localhost:8080/callback`
+
+**Note**: The application supports both HTTP and HTTPS for the redirect URL. HTTPS is recommended and is the default. The application will automatically generate a self-signed certificate for localhost when using HTTPS.
+
+#### HTTPS vs HTTP Configuration
+
+**HTTPS (Recommended - Default):**
+- More secure OAuth flow
+- Required for some production deployments  
+- Uses self-signed certificate for localhost
+- Set `SPOTIFY_REDIRECT_URL=https://localhost:8080/callback`
+
+**HTTP (Alternative):**
+- Simpler setup, no certificate warnings
+- Set `SPOTIFY_REDIRECT_URL=http://localhost:8080/callback`
 
 ## Usage
 
@@ -146,9 +160,10 @@ Searching for 20 songs...
 - Verify the redirect URI is configured in your Spotify app
 
 **"Failed to authenticate with Spotify"**
-- Check that your Spotify app's redirect URI matches exactly: `http://localhost:8080/callback`
+- Check that your Spotify app's redirect URI matches exactly: `https://localhost:8080/callback`
 - Ensure port 8080 is not in use by another application
 - Try refreshing your browser if the authentication page doesn't load
+- If using HTTPS, your browser may show a security warning for the self-signed certificate - this is normal for localhost development, click "Advanced" and "Proceed to localhost"
 
 **Songs not found on Spotify**
 - This is normal - not all AI-generated songs exist on Spotify

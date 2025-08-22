@@ -56,6 +56,9 @@ setup: ## Set up development environment
 		cp env.example .env; \
 		echo "Created .env file from env.example"; \
 		echo "Please edit .env with your API keys"; \
+		echo ""; \
+		echo "Note: Default configuration uses HTTPS (https://localhost:8080/callback)"; \
+		echo "Make sure to configure this URL in your Spotify app settings."; \
 	else \
 		echo ".env file already exists"; \
 	fi

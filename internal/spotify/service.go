@@ -2,9 +2,18 @@ package spotify
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
 	"log"
+	"math/big"
+	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -51,44 +60,156 @@ func NewService(clientID, clientSecret, redirectURL string) *Service {
 	}
 }
 
+// generateSelfSignedCert generates a self-signed certificate for localhost
+func generateSelfSignedCert() (tls.Certificate, error) {
+	// Generate private key
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	// Create certificate template
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization:  []string{"Auto-Spotify"},
+			Country:       []string{"US"},
+			Province:      []string{""},
+			Locality:      []string{""},
+			StreetAddress: []string{""},
+			PostalCode:    []string{""},
+		},
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().Add(365 * 24 * time.Hour), // Valid for 1 year
+		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		DNSNames:    []string{"localhost"},
+	}
+
+	// Create certificate
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	// Encode certificate and key
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+
+	// Create TLS certificate
+	return tls.X509KeyPair(certPEM, keyPEM)
+}
+
 // Authenticate handles the OAuth flow for Spotify
 func (s *Service) Authenticate(ctx context.Context) error {
+	// Parse redirect URL to determine if we need HTTPS
+	redirectURL, err := url.Parse(s.redirectURL)
+	if err != nil {
+		return fmt.Errorf("invalid redirect URL: %w", err)
+	}
+
 	// Start a local server to handle the callback
 	ch := make(chan *oauth2.Token)
+	errCh := make(chan error)
 	state := "spotify-playlist-generator"
 
-	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+	// Create a new ServeMux for this authentication session
+	mux := http.NewServeMux()
+	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		token, err := s.auth.Token(ctx, state, r)
 		if err != nil {
 			http.Error(w, "Couldn't get token", http.StatusForbidden)
-			log.Fatal(err)
+			errCh <- fmt.Errorf("failed to get token: %w", err)
+			return
 		}
-		
-		fmt.Fprint(w, "Login successful! You can close this window.")
+
+		fmt.Fprint(w, `<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto-Spotify - Login Successful</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #1db954; color: white; }
+        .container { background-color: #191414; padding: 30px; border-radius: 10px; display: inline-block; }
+        h1 { margin: 0 0 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Login Successful!</h1>
+        <p>You can now close this window and return to your terminal.</p>
+    </div>
+</body>
+</html>`)
 		ch <- token
 	})
 
+	server := &http.Server{
+		Addr:    ":" + redirectURL.Port(),
+		Handler: mux,
+	}
+
+	// Start server based on URL scheme
 	go func() {
-		log.Println("Starting local server on :8080 for Spotify OAuth callback...")
-		if err := http.ListenAndServe(":8080", nil); err != nil {
-			log.Printf("Server error: %v", err)
+		if redirectURL.Scheme == "https" {
+			log.Printf("Starting HTTPS server on %s for Spotify OAuth callback...", server.Addr)
+
+			// Generate self-signed certificate for localhost
+			cert, err := generateSelfSignedCert()
+			if err != nil {
+				errCh <- fmt.Errorf("failed to generate certificate: %w", err)
+				return
+			}
+
+			server.TLSConfig = &tls.Config{
+				Certificates: []tls.Certificate{cert},
+			}
+
+			if err := server.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
+				errCh <- fmt.Errorf("HTTPS server error: %w", err)
+			}
+		} else {
+			log.Printf("Starting HTTP server on %s for Spotify OAuth callback...", server.Addr)
+			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				errCh <- fmt.Errorf("HTTP server error: %w", err)
+			}
 		}
 	}()
 
 	// Give the server time to start
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
-	url := s.auth.AuthURL(state)
-	fmt.Printf("Please log in to Spotify by visiting the following page in your browser:\n%s\n\n", url)
+	authURL := s.auth.AuthURL(state)
+	fmt.Printf("Please log in to Spotify by visiting the following page in your browser:\n%s\n\n", authURL)
 
-	// Wait for the callback
-	token := <-ch
-	
-	// Create client with the token
-	httpClient := s.auth.Client(ctx, token)
-	s.client = spotify.New(httpClient)
+	// Wait for either success or error
+	select {
+	case token := <-ch:
+		// Shutdown the server
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		server.Shutdown(shutdownCtx)
 
-	return nil
+		// Create client with the token
+		httpClient := s.auth.Client(ctx, token)
+		s.client = spotify.New(httpClient)
+
+		return nil
+	case err := <-errCh:
+		// Shutdown the server
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		server.Shutdown(shutdownCtx)
+
+		return err
+	case <-ctx.Done():
+		// Shutdown the server
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		server.Shutdown(shutdownCtx)
+
+		return ctx.Err()
+	}
 }
 
 // SearchSong searches for a song on Spotify
@@ -119,7 +240,7 @@ func (s *Service) SearchSong(ctx context.Context, song openai.Song) *SearchResul
 					}
 				}
 			}
-			
+
 			// If no perfect match, return the first result
 			return &SearchResult{
 				Track:  &results.Tracks.Tracks[0],
@@ -159,8 +280,8 @@ func (s *Service) isGoodMatch(requested openai.Song, track *spotify.FullTrack) b
 	}
 
 	// Check title similarity
-	titleMatch := trackTitle == requestedTitle || 
-		strings.Contains(trackTitle, requestedTitle) || 
+	titleMatch := trackTitle == requestedTitle ||
+		strings.Contains(trackTitle, requestedTitle) ||
 		strings.Contains(requestedTitle, trackTitle)
 
 	return artistMatch && titleMatch
@@ -196,13 +317,13 @@ func (s *Service) CreatePlaylist(ctx context.Context, playlistResp *openai.Playl
 	var searchResults []SearchResult
 
 	fmt.Printf("Searching for %d songs...\n", len(playlistResp.Songs))
-	
+
 	for i, song := range playlistResp.Songs {
 		fmt.Printf("  [%d/%d] Searching for: %s - %s\n", i+1, len(playlistResp.Songs), song.Artist, song.Title)
-		
+
 		result := s.SearchSong(ctx, song)
 		searchResults = append(searchResults, *result)
-		
+
 		if result.Found {
 			trackIDs = append(trackIDs, result.Track.ID)
 			fmt.Printf("    ✓ Found: %s - %s\n", result.Track.Artists[0].Name, result.Track.Name)
@@ -219,7 +340,7 @@ func (s *Service) CreatePlaylist(ctx context.Context, playlistResp *openai.Playl
 			if end > len(trackIDs) {
 				end = len(trackIDs)
 			}
-			
+
 			batch := trackIDs[i:end]
 			_, err := s.client.AddTracksToPlaylist(ctx, playlist.ID, batch...)
 			if err != nil {
