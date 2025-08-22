@@ -56,15 +56,19 @@ jobs:
     - name: Install Jekyll dependencies
       run: bundle install
         
-    - name: Build Jekyll site
+    - name: Build Jekyll site (includes dist/ directory)
       run: bundle exec jekyll build
       env:
         JEKYLL_ENV: production
         
-    - name: Copy binaries to built site
+    - name: Verify binaries in Jekyll site
       run: |
-        mkdir -p _site/dist
-        cp -r dist/* _site/dist/
+        echo "Checking if binaries exist in source:"
+        ls -la dist/
+        echo "Checking if binaries were copied to Jekyll site:"
+        ls -la _site/dist/ || echo "No _site/dist directory found"
+        echo "Checking Jekyll site structure:"
+        find _site -name "*.exe" -o -name "auto-spotify-*" | head -10
         
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3

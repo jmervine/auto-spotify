@@ -96,12 +96,12 @@ jekyll-install: ## Install Jekyll dependencies
 jekyll-serve: release ## Serve Jekyll site locally for development
 	@echo "Starting Jekyll development server..."
 	@mkdir -p dist
-	@bundle exec jekyll serve --livereload
+	@bundle exec --gemfile=Gemfile jekyll serve --livereload
 
 jekyll-build: release ## Build Jekyll site locally
 	@echo "Building Jekyll site..."
 	@mkdir -p dist
-	@bundle exec jekyll build
+	@bundle exec --gemfile=Gemfile jekyll build
 	@mkdir -p _site/dist
 	@cp -r dist/* _site/dist/
 	@echo "✅ Jekyll site built in _site/"

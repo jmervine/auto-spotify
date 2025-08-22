@@ -8,6 +8,10 @@ markdown: kramdown
 highlighter: rouge
 theme: minima
 
+# Include static files
+include:
+  - dist
+
 # Plugins
 plugins:
   - jekyll-feed
