@@ -4,7 +4,20 @@ Create Spotify playlists automatically! Auto-Spotify can create playlists from y
 
 ## 📦 Installation
 
-### Install from Source
+### Option 1: Download Pre-built Binary (Recommended)
+
+1. Go to the [Releases page](https://github.com/jmervine/auto-spotify/releases) or download directly from the repository
+2. Download the binary for your operating system:
+   - **Linux (AMD64)**: `dist/auto-spotify-linux-amd64`
+   - **macOS (Intel)**: `dist/auto-spotify-darwin-amd64`
+   - **macOS (Apple Silicon)**: `dist/auto-spotify-darwin-arm64`
+   - **Windows (AMD64)**: `dist/auto-spotify-windows-amd64.exe`
+3. Make the file executable (macOS/Linux only):
+   ```bash
+   chmod +x auto-spotify-*
+   ```
+
+### Option 2: Build from Source
 
 **Requirements**: Go 1.21 or later
 

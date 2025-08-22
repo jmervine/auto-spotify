@@ -1,5 +1,6 @@
 # Binaries for programs and plugins
 *.exe
+!dist/*.exe
 *.exe~
 *.dll
 *.so
@@ -41,7 +42,6 @@ Thumbs.db
 # Build artifacts
 auto-spotify
 auto-spotify.exe
-dist/
 build/
 
 # Logs

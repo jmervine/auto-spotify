@@ -69,6 +69,7 @@ make setup      # Set up development environment
 make build      # Build the application
 make test       # Run all tests and checks
 make run        # Build and run with test prompt
+make release    # Build cross-platform binaries
 make clean      # Clean build artifacts
 make help       # Show all available commands
 ```
@@ -232,6 +233,22 @@ echo "Queen - Bohemian Rhapsody\nThe Beatles - Hey Jude" > test-songs.txt
 - **Service creation**: ~90ns per instance
 - **Memory usage**: Minimal for typical playlist sizes
 - **Concurrent requests**: Spotify searches are done sequentially to respect rate limits
+
+### Building Release Binaries
+
+To create cross-platform binaries for distribution:
+
+```bash
+make release
+```
+
+This creates optimized binaries in the `dist/` directory:
+- `auto-spotify-linux-amd64` - Linux 64-bit
+- `auto-spotify-darwin-amd64` - macOS Intel
+- `auto-spotify-darwin-arm64` - macOS Apple Silicon
+- `auto-spotify-windows-amd64.exe` - Windows 64-bit
+
+The binaries are statically linked and optimized with `-ldflags="-s -w"` for smaller file sizes.
 
 ## Submitting Changes
 
