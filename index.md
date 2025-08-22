@@ -42,165 +42,246 @@ Choose the binary for your operating system:
 
 ---
 
-<div class="install-instructions">
-<p><strong>After downloading:</strong></p>
-<ul>
-<li><strong>Linux/macOS:</strong> <code>mv auto-spotify-* auto-spotify && chmod +x auto-spotify</code></li>
-<li><strong>Windows:</strong> <code>ren auto-spotify-*.exe auto-spotify.exe</code></li>
-</ul>
-</div>
+Create Spotify playlists automatically! Auto-Spotify can create playlists from your own song lists or use AI to generate new playlists based on your music preferences.
 
----
 
-## 🚀 Installation
+## 📦 Download Pre-built Binaries
+
+Choose the binary for your operating system:
+
+- **🐧 Linux (AMD64)**: [auto-spotify-linux-amd64](https://github.com/jmervine/auto-spotify/releases/latest/download/auto-spotify-linux-amd64)
+- **🍎 macOS (Intel)**: [auto-spotify-darwin-amd64](https://github.com/jmervine/auto-spotify/releases/latest/download/auto-spotify-darwin-amd64)
+- **🍎 macOS (Apple Silicon)**: [auto-spotify-darwin-arm64](https://github.com/jmervine/auto-spotify/releases/latest/download/auto-spotify-darwin-arm64)
+- **🪟 Windows (AMD64)**: [auto-spotify-windows-amd64.exe](https://github.com/jmervine/auto-spotify/releases/latest/download/auto-spotify-windows-amd64.exe)
+
+**After downloading:**
+- **Linux/macOS:** `mv auto-spotify-* auto-spotify && chmod +x auto-spotify`
+- **Windows:** `ren auto-spotify-*.exe auto-spotify.exe`
+
+## 📦 Installation
 
 ### Option 1: Download Pre-built Binary (Recommended)
 
-1. Download the appropriate binary for your system from the links above
-2. Rename and make it executable as shown in the instructions
-3. Move it to a directory in your PATH (optional but recommended)
+1. Go to the [Releases page](https://github.com/jmervine/auto-spotify/releases) or download directly from the repository
+2. Download the binary for your operating system:
+   - **Linux (AMD64)**: `dist/auto-spotify-linux-amd64`
+   - **macOS (Intel)**: `dist/auto-spotify-darwin-amd64`
+   - **macOS (Apple Silicon)**: `dist/auto-spotify-darwin-arm64`
+   - **Windows (AMD64)**: `dist/auto-spotify-windows-amd64.exe`
+3. Rename and make executable:
 
-### Option 2: Install from Source
+   **Linux/macOS:**
+   ```bash
+   # Download and rename (example for macOS Apple Silicon)
+   mv auto-spotify-darwin-arm64 auto-spotify
+   chmod +x auto-spotify
+   ```
+   
+   **Windows:**
+   ```cmd
+   # Rename the downloaded file
+   ren auto-spotify-windows-amd64.exe auto-spotify.exe
+   ```
 
-**Requirements:** Go 1.21 or later
+### Option 2: Build from Source
+
+**Requirements**: Go 1.21 or later
 
 ```bash
 git clone https://github.com/jmervine/auto-spotify.git
 cd auto-spotify
-make setup
-make build
+go mod tidy
+go build -o auto-spotify
 ```
 
----
+## 🎵 Method 1: Using ChatGPT (Free - No OpenAI Account Required)
 
-## 🎯 Method 1: Using ChatGPT (Free)
+**Best for**: People who don't want to pay for OpenAI API access but want AI-generated playlists.
 
-If you don't have an OpenAI API key, you can use ChatGPT to generate song lists:
+### Step 1: Get Song Recommendations from ChatGPT
 
-### Step 1: Get Your Spotify Credentials
+Go to [ChatGPT](https://chat.openai.com) and use this detailed prompt:
 
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Create a new app
-3. Note your **Client ID** and **Client Secret**
-4. Add `http://127.0.0.1:8080/callback` as a redirect URI
+```
+I want to create a Spotify playlist. Please generate a list of 25 songs in the exact format I specify below. Each line should contain only the artist name, a dash, and the song title. Do not include any other text, explanations, or formatting.
 
-### Step 2: Create Your Environment File
+Theme: [DESCRIBE YOUR DESIRED PLAYLIST HERE - e.g., "upbeat workout music with electronic and rock elements"]
+
+Please format each song exactly like this:
+Artist Name - Song Title
+
+For example:
+The Weeknd - Blinding Lights
+Dua Lipa - Physical
+Imagine Dragons - Believer
+
+Now generate 25 songs for my theme:
+```
+
+**Example for a workout playlist:**
+
+```
+I want to create a Spotify playlist. Please generate a list of 25 songs in the exact format I specify below. Each line should contain only the artist name, a dash, and the song title. Do not include any other text, explanations, or formatting.
+
+Theme: High-energy workout music with a mix of electronic, rock, and pop songs that are perfect for running and strength training. Focus on songs with strong beats and motivational lyrics.
+
+Please format each song exactly like this:
+Artist Name - Song Title
+
+For example:
+The Weeknd - Blinding Lights
+Dua Lipa - Physical
+Imagine Dragons - Believer
+
+Now generate 25 songs for my theme:
+```
+
+### Step 2: Save the Song List
+
+1. Copy ChatGPT's response (just the song list)
+2. Paste it into a text file (e.g., `workout-playlist.txt`)
+3. Save the file
+
+### Step 3: Set Up Spotify App
+
+1. Go to [Spotify for Developers](https://developer.spotify.com/dashboard)
+2. Log in with your Spotify account
+3. Click "Create App"
+4. Fill in:
+   - **App name**: `Auto-Spotify` (or any name)
+   - **App description**: `Personal playlist generator`
+   - **Redirect URI**: `http://127.0.0.1:8080/callback`
+5. Save your **Client ID** and **Client Secret**
+
+### Step 4: Configure Auto-Spotify
+
+Create a `.env` file in the same folder as the auto-spotify executable:
+
+```env
+# You can leave this blank for file-based playlists
+OPENAI_API_KEY=
+
+# Your Spotify app credentials
+SPOTIFY_CLIENT_ID=your_spotify_client_id_here
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
+SPOTIFY_REDIRECT_URL=http://127.0.0.1:8080/callback
+```
+
+### Step 5: Create Your Playlist
 
 ```bash
-cp env.example .env
-# Edit .env with your Spotify credentials
+./auto-spotify --file workout-playlist.txt --name "My Workout Playlist"
 ```
 
-### Step 3: Generate Song List with ChatGPT
-
-Use this prompt in ChatGPT:
-
-```
-Create a playlist of 40 songs for "80s and 90s metal like metallica, skid row, etc". 
-
-Format the output as a simple text list with one song per line in this exact format:
-Artist - Song Title
-
-Do not include any explanations, numbers, or additional text. Just the song list.
-
-Example format:
-Metallica - Enter Sandman
-Skid Row - 18 and Life
-```
-
-### Step 4: Save and Use the Song List
-
-1. Copy the ChatGPT response to a text file (e.g., `my-playlist.txt`)
-2. Run: `auto-spotify --file my-playlist.txt "My Awesome Playlist"`
-
----
+The app will:
+1. Read your song list
+2. Ask you to log in to Spotify (one-time setup)
+3. Search for each song on Spotify
+4. Create the playlist in your account
+5. Show you which songs were found/not found
 
 ## 🤖 Method 2: Using OpenAI API (Paid - Experimental)
 
-⚠️ **Note:** This method is experimental and requires an OpenAI API key with available credits.
+**Best for**: People with OpenAI API access who want fully automated AI playlist generation.
 
-### Setup
+⚠️ **Note**: This feature is experimental and may not work perfectly. OpenAI API usage will cost money based on your usage.
 
-1. Get your OpenAI API key from [OpenAI Platform](https://platform.openai.com/api-keys)
-2. Add it to your `.env` file:
-   ```bash
-   OPENAI_API_KEY=your_api_key_here
-   ```
+### Step 1: Get OpenAI API Key
 
-### Usage
+1. Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
+2. Create a new API key
+3. Make sure you have credits in your OpenAI account
 
-```bash
-# Generate playlist with AI
-auto-spotify --count 25 "chill indie rock for studying"
+### Step 2: Set Up Spotify App
 
-# Multiple prompts
-auto-spotify --count 30 "upbeat workout songs" "electronic dance music" "pop hits 2020s"
+Follow the same Spotify setup steps from Method 1.
+
+### Step 3: Configure Auto-Spotify
+
+Create a `.env` file:
+
+```env
+# Your OpenAI API key
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Your Spotify app credentials  
+SPOTIFY_CLIENT_ID=your_spotify_client_id_here
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
+SPOTIFY_REDIRECT_URL=http://127.0.0.1:8080/callback
 ```
 
----
+### Step 4: Generate Playlists with AI
 
-## ⚙️ Advanced Options
+**Single prompt:**
+```bash
+./auto-spotify "upbeat workout music with electronic beats"
+```
 
-### Command Line Flags
+**Multiple prompts:**
+```bash
+./auto-spotify "90s hip hop" "modern R&B" --songs 30
+```
+
+**Specify number of songs:**
+```bash
+./auto-spotify "chill indie rock for studying" --songs 25
+```
+
+## 🎛️ Advanced Options
+
+### Command Options
 
 - `--file, -f`: Load songs from a text file instead of using AI
-- `--count, -c`: Number of songs to generate (default: 20, max: 50)
+- `--name, -n`: Custom playlist name (when using --file)
+- `--songs, -s`: Number of songs to include (default: 20, ignored when using --file)
+- `--create, -c`: Force create new playlist instead of updating existing one
 - `--help, -h`: Show help information
 
-### Supported File Formats
+### File Format Support
 
-The app supports flexible song formats in text files:
+Your text files can use any of these formats:
 
-```
-# These formats all work:
+```text
+# Comments start with # or //
 Artist - Song Title
-Song Title by Artist  
-Artist: Song Title
-"Song Title" - Artist
+Artist: Song Title  
+Song Title by Artist
+Just Song Title
 ```
 
-### Environment Variables
+### Playlist Update Behavior
 
-```bash
-# Required for Spotify
-SPOTIFY_CLIENT_ID=your_client_id
-SPOTIFY_CLIENT_SECRET=your_client_secret
-SPOTIFY_REDIRECT_URL=http://127.0.0.1:8080/callback
-
-# Optional for AI features
-OPENAI_API_KEY=your_api_key_here
-```
-
----
+- **Default**: If a playlist with the same name exists, it will be updated
+- **Force Create**: Use `--create` flag to always create a new playlist
 
 ## 🔧 Troubleshooting
 
-### "Invalid redirect URI" Error
-- Make sure your Spotify app has `http://127.0.0.1:8080/callback` as a redirect URI
+**"SPOTIFY_CLIENT_ID is required"**
+- Make sure your `.env` file exists and contains your Spotify app credentials
+- Verify the redirect URI is configured in your Spotify app: `http://127.0.0.1:8080/callback`
+
+**"Failed to authenticate with Spotify"**
+- Check that your Spotify app's redirect URI matches exactly: `http://127.0.0.1:8080/callback`
+- Make sure port 8080 isn't being used by another application
 - Use `127.0.0.1` instead of `localhost`
 
-### "Song not found" Messages
-- Some songs may not be available on Spotify
-- Try alternative song titles or artists
-- Check your internet connection
+**Songs not found on Spotify**
+- This is normal - not all songs exist on Spotify
+- The app will create a playlist with the songs it can find
+- Try more specific artist/song names for better results
 
-### OpenAI API Issues
-- Verify your API key is valid and has credits
-- Check [OpenAI Status](https://status.openai.com/) for service issues
-- The free tier has limited usage
+**OpenAI API errors**
+- Verify your API key is valid and has credits available
+- Check your OpenAI account billing status
 
-### Permission Denied
-- Make sure the binary is executable: `chmod +x auto-spotify`
-- On macOS, you may need to allow the app in Security & Privacy settings
-
----
-
-## 🤝 Contributing
+## 📝 Contributing
 
 See [CONTRIBUTING.md]({{ site.baseurl }}/contributing/) for development setup, testing, and contribution guidelines.
 
----
-
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE]({{ site.baseurl }}/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Happy playlist creating! 🎶**

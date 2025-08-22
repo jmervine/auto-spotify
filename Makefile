@@ -79,8 +79,13 @@ setup: ## Set up development environment
 	fi
 	$(MAKE) install
 
+# Generate Jekyll files from README and CONTRIBUTING
+generate-jekyll: ## Generate Jekyll files from primary documentation
+	@echo "Generating Jekyll files from README and CONTRIBUTING..."
+	@ruby scripts/generate-jekyll.rb
+
 # Release build (cross-platform)
-release: clean ## Build release binaries for multiple platforms
+release: clean generate-jekyll ## Build release binaries and update documentation
 	@echo "Building release binaries..."
 	GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/auto-spotify-linux-amd64 .
 	GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o dist/auto-spotify-darwin-amd64 .
