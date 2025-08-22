@@ -13,7 +13,7 @@ Choose the binary for your operating system:
 
 <div class="download-grid">
 {% for download in site.downloads %}
-  <a href="{{ site.baseurl }}/dist/{{ download.file }}" class="download-btn" download>
+  <a href="{{ '/dist/' | append: download.file | relative_url }}" class="download-btn" download>
     <span class="download-icon">{{ download.icon }}</span>
     <span class="download-name">{{ download.name }}</span>
   </a>
