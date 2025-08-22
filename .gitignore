@@ -44,6 +44,9 @@ auto-spotify
 auto-spotify.exe
 build/
 
+# Generated documentation
+docs-site/
+
 # Logs
 *.log
 

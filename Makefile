@@ -88,6 +88,16 @@ release: clean ## Build release binaries for multiple platforms
 	GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/auto-spotify-windows-amd64.exe .
 	@echo "Release binaries created in dist/"
 
+# Build GitHub Pages site locally
+pages: release ## Build GitHub Pages site locally for testing
+	@echo "Building GitHub Pages site..."
+	@python3 scripts/build-pages.py
+
+# Clean pages artifacts
+clean-pages: ## Remove generated pages site
+	@echo "Cleaning pages artifacts..."
+	@rm -rf docs-site
+
 # Help target
 help: ## Show this help message
 	@echo "Auto-Spotify Development Commands:"
