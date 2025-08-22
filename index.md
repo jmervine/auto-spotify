@@ -20,19 +20,7 @@ Choose the binary for your operating system:
 {% endfor %}
 </div>
 
-<!-- Debug: Show what downloads are available -->
-{% if site.downloads.size == 0 %}
-<p><strong>Debug:</strong> No downloads found in site.downloads</p>
-{% else %}
-<p><strong>Debug:</strong> Found {{ site.downloads.size }} downloads:</p>
-<ul>
-{% for download in site.downloads %}
-  <li>{{ download.name }}: {{ download.file }}</li>
-{% endfor %}
-</ul>
-{% endif %}
-
-<!-- Fallback static download links -->
+<!-- Static download links -->
 <div class="download-grid">
   <a href="{{ site.baseurl }}/dist/auto-spotify-linux-amd64" class="download-btn" download>
     <span class="download-icon">🐧</span>
